@@ -1,4 +1,4 @@
-import { AppProvider } from "@shopify/shopify-app-react-router/react";
+import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { useState } from "react";
 import { Form, useActionData, useLoaderData } from "react-router";
 import { login } from "../../shopify.server";
