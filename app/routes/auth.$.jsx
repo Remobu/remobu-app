@@ -1,7 +1,13 @@
-import { redirect } from "react-router";
+import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  const { session } = await authenticate.callback(request);
-  return redirect(`/app?shop=${session.shop}`);
+  await authenticate.admin(request);
+  return null;
+};
+
+export const ErrorBoundary = boundary.error;
+
+export const headers = (headersArgs) => {
+  return boundary.headers(headersArgs);
 };
