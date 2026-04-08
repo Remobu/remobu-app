@@ -2,7 +2,7 @@
 
 client_id = "f441c2fe8cf0d288130a44202dc11341"
 name = "Remobu App"
-application_url = "https://ownership-rank-grateful-guardian.trycloudflare.com"
+application_url = "https://remobu-app-production.up.railway.app"
 embedded = true
 
 [webhooks]
@@ -13,7 +13,7 @@ api_version = "2026-07"
 scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 
 [auth]
-redirect_urls = [ "https://ownership-rank-grateful-guardian.trycloudflare.com/api/auth" ]
+redirect_urls = [ "https://remobu-app-production.up.railway.app/api/auth" ]
 
 [build]
 automatically_update_urls_on_dev = true
