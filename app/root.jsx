@@ -1,5 +1,4 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
-import { boundary } from "@shopify/shopify-app-react-router/server";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError, isRouteErrorResponse } from "react-router";
 
 export default function App() {
   return (
@@ -24,4 +23,10 @@ export default function App() {
   );
 }
 
-export const ErrorBoundary = boundary.error;
+export function ErrorBoundary() {
+  const error = useRouteError();
+  if (isRouteErrorResponse(error)) {
+    return null;
+  }
+  throw error;
+}
