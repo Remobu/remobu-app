@@ -1,6 +1,4 @@
-import { createRequestHandler } from "@remix-run/express";
 import express from "express";
-import * as build from "./build/server/index.js";
 
 const app = express();
 app.use(express.json());
@@ -10,12 +8,12 @@ const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// ✅ WhatsApp webhook - BEFORE Remix handler
+// ✅ WhatsApp webhook FIRST
 app.get("/webhook/whatsapp", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
-  console.log("🔔 Verify:", { mode, token, challenge });
+  console.log("🔔 Verify:", { mode, token, challenge, VERIFY_TOKEN });
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
     console.log("✅ Verified!");
     return res.status(200).send(challenge);
@@ -39,7 +37,9 @@ app.post("/webhook/whatsapp", async (req, res) => {
   }
 });
 
-// Remix handles everything else
+// ✅ Remix loaded lazily AFTER webhook routes
+const { createRequestHandler } = await import("@remix-run/express");
+const build = await import("./build/server/index.js");
 app.all("*", createRequestHandler({ build }));
 
 const PORT = process.env.PORT || 3000;
