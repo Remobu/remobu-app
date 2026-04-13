@@ -1,7 +1,7 @@
 import { PassThrough } from "stream";
 import { renderToPipeableStream } from "react-dom/server";
-import { ServerRouter } from "react-router";
-import { createReadableStreamFromReadable } from "@react-router/node";
+import { ServerRouter } from "@remix-run/react";
+import { createReadableStreamFromReadable } from "@remix-run/node";
 import { isbot } from "isbot";
 import { addDocumentResponseHeaders } from "./shopify.server";
 

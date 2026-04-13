@@ -1,5 +1,5 @@
-import { data } from "react-router";
-import { useActionData, useLoaderData, useSubmit, useNavigation } from "react-router";
+import { data } from "@remix-run/react";
+import { useActionData, useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 import { Page, Card, TextField, Button, Text, BlockStack, Select } from "@shopify/polaris";
 import { GoogleGenerativeAI } from "@google/generative-ai";

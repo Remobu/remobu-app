@@ -1,4 +1,4 @@
-import { reactRouter } from "@react-router/dev/vite";
+import { vitePlugin } from "@remix-run/dev";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -48,10 +48,9 @@ export default defineConfig({
       allow: ["app", "node_modules"],
     },
   },
-  plugins: [reactRouter(), tsconfigPaths()],
+  plugins: [vitePlugin(), tsconfigPaths()],
   build: {
     assetsInlineLimit: 0,
-    rollupOptions: { external: ["@remix-run/react", "react-router-dom"] },
   },
   optimizeDeps: {
     include: ["@shopify/app-bridge-react"],
