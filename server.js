@@ -24,3 +24,7 @@ app.all("*", createRequestHandler({ build }));
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`🌱 REMOBU on port ${port}`));
+
+app.get("/debug/token", (req, res) => {
+  res.json({ token: process.env.WEBHOOK_VERIFY_TOKEN ? "SET" : "NOT SET" });
+});
