@@ -7,7 +7,7 @@ installGlobals();
 const app = express();
 app.use(express.json());
 
-const VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
+const VERIFY_TOKEN = (process.env.WEBHOOK_VERIFY_TOKEN || "").trim();
 
 app.get("/webhook/whatsapp", (req, res) => {
   const mode = req.query["hub.mode"];
