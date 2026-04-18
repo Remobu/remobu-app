@@ -3,6 +3,10 @@ import { createRequestHandler } from "@remix-run/express";
 import { installGlobals } from "@remix-run/node";
 
 installGlobals();
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
+
+
 
 const app = express();
 
