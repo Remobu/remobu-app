@@ -17,4 +17,4 @@ RUN npm run build
 
 RUN npm prune --omit=dev
 
-CMD ["sh", "-c", "npx prisma generate && npx prisma db push --accept-data-loss || true && node server.js"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma db push --accept-data-loss || true && node server.js 2>&1"]
