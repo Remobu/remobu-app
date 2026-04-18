@@ -199,3 +199,7 @@ app.get('/advisor/dashboard/:advisorId', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log('REMOBU server running on port', process.env.PORT || 3000);
+});
