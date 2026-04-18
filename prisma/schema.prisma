@@ -24,3 +24,153 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+enum Role {
+  FARMER
+  ADVISOR
+  ADMIN
+}
+
+enum Specialization {
+  AGRONOMY
+  VETERINARY
+  IPM
+  SOIL_SCIENCE
+  IRRIGATION
+  LIVESTOCK
+  HORTICULTURE
+  GENERAL
+}
+
+enum PlatformFeeModel {
+  SUBSCRIPTION
+  REVENUE_SHARE
+  HYBRID
+}
+
+enum QueryStatus {
+  AI_HANDLED
+  ESCALATED
+  ADVISOR_HANDLED
+  PENDING
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum Language {
+  ENGLISH
+  SESOTHO
+}
+
+model User {
+  id            String    @id @default(cuid())
+  phone         String    @unique
+  name          String?
+  role          Role      @default(FARMER)
+  language      Language  @default(ENGLISH)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  farmerProfile  Farmer?
+  advisorProfile Advisor?
+  queriesAsked   Query[]  @relation("FarmerQueries")
+}
+
+model Farmer {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  location      String?
+  cropTypes     String[]
+  walletBalance Float    @default(0)
+  advisorId     String?
+  advisor       Advisor? @relation(fields: [advisorId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Advisor {
+  id                  String           @id @default(cuid())
+  userId              String           @unique
+  user                User             @relation(fields: [userId], references: [id])
+  specialization      Specialization   @default(GENERAL)
+  bio                 String?
+  credentials         String?
+  languages           Language[]       @default([ENGLISH])
+  consultancyFee      Float
+  platformFeeModel    PlatformFeeModel @default(HYBRID)
+  monthlyFee          Float?
+  revenueSharePct     Float?
+  payoutMethod        String?
+  payoutAccount       String?
+  isVerified          Boolean          @default(false)
+  isActive            Boolean          @default(true)
+  farmers             Farmer[]
+  queries             Query[]          @relation("AdvisorQueries")
+  subscriptions       AdvisorSubscription[]
+  payouts             Payout[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}
+
+model Query {
+  id              String      @id @default(cuid())
+  farmerId        String
+  farmer          User        @relation("FarmerQueries", fields: [farmerId], references: [id])
+  advisorId       String?
+  advisor         Advisor?    @relation("AdvisorQueries", fields: [advisorId], references: [id])
+  question        String
+  aiResponse      String?
+  advisorResponse String?
+  status          QueryStatus @default(PENDING)
+  language        Language    @default(ENGLISH)
+  feeCharged      Float?
+  platformCut     Float?
+  advisorEarning  Float?
+  payment         Payment?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  queryId       String        @unique
+  query         Query         @relation(fields: [queryId], references: [id])
+  amount        Float
+  currency      String        @default("LSL")
+  method        String?
+  status        PaymentStatus @default(PENDING)
+  reference     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model AdvisorSubscription {
+  id          String        @id @default(cuid())
+  advisorId   String
+  advisor     Advisor       @relation(fields: [advisorId], references: [id])
+  amount      Float
+  status      PaymentStatus @default(PENDING)
+  periodStart DateTime
+  periodEnd   DateTime
+  reference   String?
+  createdAt   DateTime      @default(now())
+}
+
+model Payout {
+  id          String        @id @default(cuid())
+  advisorId   String
+  advisor     Advisor       @relation(fields: [advisorId], references: [id])
+  amount      Float
+  currency    String        @default("LSL")
+  method      String?
+  status      PaymentStatus @default(PENDING)
+  reference   String?
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime      @default(now())
+}
