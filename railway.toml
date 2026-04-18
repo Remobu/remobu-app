@@ -1,5 +1,9 @@
 [build]
 builder = "nixpacks"
+buildCommand = "npm run build"
 
 [build.nixpacksPlan.phases.setup]
 nixPkgs = ["nodejs_20"]
+
+[deploy]
+startCommand = "npm run setup && node server.js"
