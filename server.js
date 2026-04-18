@@ -58,12 +58,14 @@ app.all("*", createRequestHandler({ build }));
 const port = process.env.PORT || 3000;
 
 
+
 // ─── MARKETPLACE API ENDPOINTS ───────────────────────────────────────────────
 
-// POST /advisor/register
 app.post('/advisor/register', async (req, res) => {
   try {
     const { phone, name, specialization, bio, credentials, consultancyFee, platformFeeModel, monthlyFee, revenueSharePct, payoutMethod, payoutAccount, language } = req.body;
+    const missing = [!phone, !name, !consultancyFee].some(Boolean);
+    if (missing) return res.status(400).json({ error: 'phone, name and consultancyFee are required' });
     const user = await prisma.user.upsert({
       where: { phone },
       update: { name, role: 'ADVISOR' },
@@ -81,10 +83,11 @@ app.post('/advisor/register', async (req, res) => {
   }
 });
 
-// POST /farmer/register
 app.post('/farmer/register', async (req, res) => {
   try {
     const { phone, name, location, cropTypes, advisorId, language } = req.body;
+    const missing = [!phone, !name].some(Boolean);
+    if (missing) return res.status(400).json({ error: 'phone and name are required' });
     const user = await prisma.user.upsert({
       where: { phone },
       update: { name, role: 'FARMER' },
@@ -102,23 +105,19 @@ app.post('/farmer/register', async (req, res) => {
   }
 });
 
-// POST /query/ask
 app.post('/query/ask', async (req, res) => {
   try {
     const { phone, question, language } = req.body;
-
-    // Find or create user
+    const missing = [!phone, !question].some(Boolean);
+    if (missing) return res.status(400).json({ error: 'phone and question are required' });
     let user = await prisma.user.findUnique({ where: { phone } });
+    if (user === null) {
       user = await prisma.user.create({ data: { phone, role: 'FARMER', language: language || 'ENGLISH' } });
       await prisma.farmer.create({ data: { userId: user.id, cropTypes: [] } });
     }
-
-    // Create query record
     const query = await prisma.query.create({
       data: { farmerId: user.id, question, status: 'PENDING', language: language || 'ENGLISH' }
     });
-
-    // Get AI response from Gemini
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -130,14 +129,11 @@ app.post('/query/ask', async (req, res) => {
       }
     );
     const geminiData = await geminiRes.json();
-    const aiResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
-
-    // Update query with AI response
+    const aiResponse = geminiData && geminiData.candidates && geminiData.candidates[0] ? geminiData.candidates[0].content.parts[0].text : 'Sorry, I could not generate a response.';
     await prisma.query.update({
       where: { id: query.id },
       data: { aiResponse, status: 'AI_HANDLED' }
     });
-
     res.json({ success: true, queryId: query.id, aiResponse, canEscalate: true });
   } catch (err) {
     console.error('query/ask error:', err);
@@ -145,10 +141,10 @@ app.post('/query/ask', async (req, res) => {
   }
 });
 
-// POST /query/escalate
 app.post('/query/escalate', async (req, res) => {
   try {
     const { queryId, advisorId } = req.body;
+    if (queryId === undefined) return res.status(400).json({ error: 'queryId is required' });
     const query = await prisma.query.update({
       where: { id: queryId },
       data: { status: 'ESCALATED', advisorId: advisorId || null }
@@ -160,10 +156,10 @@ app.post('/query/escalate', async (req, res) => {
   }
 });
 
-// POST /query/respond (advisor responds)
 app.post('/query/respond', async (req, res) => {
   try {
     const { queryId, advisorResponse, feeCharged, revenueSharePct } = req.body;
+    if (queryId === undefined || advisorResponse === undefined) return res.status(400).json({ error: 'queryId and advisorResponse are required' });
     const fee = feeCharged ? parseFloat(feeCharged) : 0;
     const platformCut = fee * (revenueSharePct ? parseFloat(revenueSharePct) : 0.15);
     const advisorEarning = fee - platformCut;
@@ -178,7 +174,6 @@ app.post('/query/respond', async (req, res) => {
   }
 });
 
-// GET /advisor/dashboard/:advisorId
 app.get('/advisor/dashboard/:advisorId', async (req, res) => {
   try {
     const { advisorId } = req.params;
@@ -190,6 +185,7 @@ app.get('/advisor/dashboard/:advisorId', async (req, res) => {
         queries: { orderBy: { createdAt: 'desc' }, take: 20 }
       }
     });
+    if (advisor === null) return res.status(404).json({ error: 'Advisor not found' });
     const totalEarnings = advisor.queries.reduce((sum, q) => sum + (q.advisorEarning || 0), 0);
     const pendingQueries = advisor.queries.filter(q => q.status === 'ESCALATED').length;
     res.json({
@@ -203,43 +199,3 @@ app.get('/advisor/dashboard/:advisorId', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-app.listen(port, () => console.log(`🌱 REMOBU on port ${port}`));
-
-async function getGeminiResponse(userMessage) {
-  const systemPrompt = `You are REMOBU Farm Advisor, an expert agricultural assistant serving farmers in Lesotho and the SADC region. 
-You specialize in horticulture, cannabis cultivation, animal husbandry, regenerative farming, and SACU trade.
-Respond in the same language the farmer uses (Sesotho or English).
-Keep responses concise and practical for smallholder farmers.
-Always provide actionable advice.`;
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nFarmer: ${userMessage}` }] }],
-      }),
-    }
-  );
-  const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "I could not process your request. Please try again.";
-}
-
-async function sendWhatsAppMessage(to, message) {
-  const res = await fetch(`https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "text",
-      text: { body: message },
-    }),
-  });
-  const result = await res.json();
-  console.log("📤 WhatsApp send result:", JSON.stringify(result));
-}
