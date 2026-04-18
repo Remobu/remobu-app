@@ -56,6 +56,154 @@ const build = await import("./build/server/index.js");
 app.all("*", createRequestHandler({ build }));
 
 const port = process.env.PORT || 3000;
+
+
+// ─── MARKETPLACE API ENDPOINTS ───────────────────────────────────────────────
+
+// POST /advisor/register
+app.post('/advisor/register', async (req, res) => {
+  try {
+    const { phone, name, specialization, bio, credentials, consultancyFee, platformFeeModel, monthlyFee, revenueSharePct, payoutMethod, payoutAccount, language } = req.body;
+    const user = await prisma.user.upsert({
+      where: { phone },
+      update: { name, role: 'ADVISOR' },
+      create: { phone, name, role: 'ADVISOR', language: language || 'ENGLISH' }
+    });
+    const advisor = await prisma.advisor.upsert({
+      where: { userId: user.id },
+      update: { specialization, bio, credentials, consultancyFee: parseFloat(consultancyFee), platformFeeModel: platformFeeModel || 'HYBRID', monthlyFee: monthlyFee ? parseFloat(monthlyFee) : null, revenueSharePct: revenueSharePct ? parseFloat(revenueSharePct) : null, payoutMethod, payoutAccount },
+      create: { userId: user.id, specialization: specialization || 'GENERAL', bio, credentials, consultancyFee: parseFloat(consultancyFee), platformFeeModel: platformFeeModel || 'HYBRID', monthlyFee: monthlyFee ? parseFloat(monthlyFee) : null, revenueSharePct: revenueSharePct ? parseFloat(revenueSharePct) : null, payoutMethod, payoutAccount }
+    });
+    res.json({ success: true, userId: user.id, advisorId: advisor.id });
+  } catch (err) {
+    console.error('advisor/register error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /farmer/register
+app.post('/farmer/register', async (req, res) => {
+  try {
+    const { phone, name, location, cropTypes, advisorId, language } = req.body;
+    const user = await prisma.user.upsert({
+      where: { phone },
+      update: { name, role: 'FARMER' },
+      create: { phone, name, role: 'FARMER', language: language || 'ENGLISH' }
+    });
+    const farmer = await prisma.farmer.upsert({
+      where: { userId: user.id },
+      update: { location, cropTypes: cropTypes || [], advisorId: advisorId || null },
+      create: { userId: user.id, location, cropTypes: cropTypes || [], advisorId: advisorId || null }
+    });
+    res.json({ success: true, userId: user.id, farmerId: farmer.id });
+  } catch (err) {
+    console.error('farmer/register error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /query/ask
+app.post('/query/ask', async (req, res) => {
+  try {
+    const { phone, question, language } = req.body;
+
+    // Find or create user
+    let user = await prisma.user.findUnique({ where: { phone } });
+      user = await prisma.user.create({ data: { phone, role: 'FARMER', language: language || 'ENGLISH' } });
+      await prisma.farmer.create({ data: { userId: user.id, cropTypes: [] } });
+    }
+
+    // Create query record
+    const query = await prisma.query.create({
+      data: { farmerId: user.id, question, status: 'PENDING', language: language || 'ENGLISH' }
+    });
+
+    // Get AI response from Gemini
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `You are a professional agricultural advisor for Lesotho farmers. Answer in ${language || 'English'}. Question: ${question}` }] }]
+        })
+      }
+    );
+    const geminiData = await geminiRes.json();
+    const aiResponse = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+
+    // Update query with AI response
+    await prisma.query.update({
+      where: { id: query.id },
+      data: { aiResponse, status: 'AI_HANDLED' }
+    });
+
+    res.json({ success: true, queryId: query.id, aiResponse, canEscalate: true });
+  } catch (err) {
+    console.error('query/ask error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /query/escalate
+app.post('/query/escalate', async (req, res) => {
+  try {
+    const { queryId, advisorId } = req.body;
+    const query = await prisma.query.update({
+      where: { id: queryId },
+      data: { status: 'ESCALATED', advisorId: advisorId || null }
+    });
+    res.json({ success: true, queryId: query.id, status: 'ESCALATED' });
+  } catch (err) {
+    console.error('query/escalate error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /query/respond (advisor responds)
+app.post('/query/respond', async (req, res) => {
+  try {
+    const { queryId, advisorResponse, feeCharged, revenueSharePct } = req.body;
+    const fee = feeCharged ? parseFloat(feeCharged) : 0;
+    const platformCut = fee * (revenueSharePct ? parseFloat(revenueSharePct) : 0.15);
+    const advisorEarning = fee - platformCut;
+    const query = await prisma.query.update({
+      where: { id: queryId },
+      data: { advisorResponse, status: 'ADVISOR_HANDLED', feeCharged: fee, platformCut, advisorEarning }
+    });
+    res.json({ success: true, queryId: query.id, feeCharged: fee, platformCut, advisorEarning });
+  } catch (err) {
+    console.error('query/respond error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /advisor/dashboard/:advisorId
+app.get('/advisor/dashboard/:advisorId', async (req, res) => {
+  try {
+    const { advisorId } = req.params;
+    const advisor = await prisma.advisor.findUnique({
+      where: { id: advisorId },
+      include: {
+        user: true,
+        farmers: { include: { user: true } },
+        queries: { orderBy: { createdAt: 'desc' }, take: 20 }
+      }
+    });
+    const totalEarnings = advisor.queries.reduce((sum, q) => sum + (q.advisorEarning || 0), 0);
+    const pendingQueries = advisor.queries.filter(q => q.status === 'ESCALATED').length;
+    res.json({
+      success: true,
+      advisor: { id: advisor.id, name: advisor.user.name, specialization: advisor.specialization, consultancyFee: advisor.consultancyFee },
+      stats: { totalFarmers: advisor.farmers.length, totalQueries: advisor.queries.length, pendingQueries, totalEarnings },
+      recentQueries: advisor.queries.slice(0, 10)
+    });
+  } catch (err) {
+    console.error('advisor/dashboard error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(port, () => console.log(`🌱 REMOBU on port ${port}`));
 
 async function getGeminiResponse(userMessage) {
