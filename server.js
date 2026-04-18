@@ -200,6 +200,17 @@ app.get('/advisor/dashboard/:advisorId', async (req, res) => {
   }
 });
 
+
+app.get('/debug/test', async (req, res) => {
+  try {
+    const userCount = await prisma.user.count();
+    const advisorCount = await prisma.advisor.count();
+    res.json({ ok: true, userCount, advisorCount });
+  } catch (err) {
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
+
 app.listen(process.env.PORT || 3000, () => {
   console.log('REMOBU server running on port', process.env.PORT || 3000);
 });
