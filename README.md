@@ -236,3 +236,4 @@ Internationalization:
 
 - [Internationalizing your app](https://shopify.dev/docs/apps/best-practices/internationalization/getting-started)
 # cache bust Sun Apr 19 06:30:59 PM UTC 2026
+# redeploy Sun Apr 19 07:05:37 PM UTC 2026
