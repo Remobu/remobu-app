@@ -2,7 +2,7 @@
   "name": "remobu-app",
   "private": true,
   "scripts": {
-    "build": "remix vite:build",
+    "build": "remix vite:build && node patch-build.js",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",

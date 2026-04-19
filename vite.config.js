@@ -23,9 +23,6 @@ export default defineConfig({
       : { protocol: "wss", host, port: parseInt(process.env.FRONTEND_PORT) || 8002, clientPort: 443 },
     fs: { allow: ["app", "node_modules"] },
   },
-  ssr: {
-    noExternal: ["@remix-run/react"],
-  },
   plugins: [remixVitePlugin(), tsconfigPaths()],
   build: { assetsInlineLimit: 0 },
   optimizeDeps: { include: ["@shopify/app-bridge-react"] },
