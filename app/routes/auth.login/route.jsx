@@ -1,4 +1,5 @@
-import { AppProvider } from "@shopify/shopify-app-remix/react";
+import { createRequire as _cr } from "module";
+const { AppProvider } = _cr(import.meta.url)("@shopify/shopify-app-remix/react");
 import { useState } from "react";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import { login } from "../../shopify.server";
