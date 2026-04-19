@@ -12,11 +12,15 @@ if (remixRegex.test(content)) {
   console.log("✅ patched: @remix-run/react");
 }
 
-// @shopify/shopify-app-remix/react - point to correct CJS path
-content = content.replace(
-  `from "@shopify/shopify-app-remix/react"`,
-  `from "@shopify/shopify-app-remix/dist/cjs/react/index.js"`
-);
-console.log("✅ patched: shopify-app-remix/react -> dist/cjs");
+// @shopify/shopify-app-remix/react - inject createRequire shim at top
+const shopifyReactRegex = /import \{([^}]+)\} from "@shopify\/shopify-app-remix\/react";/s;
+if (shopifyReactRegex.test(content)) {
+  const shim = `import { createRequire as _createRequire } from "module";\nconst _require = _createRequire(import.meta.url);\n`;
+  content = content.replace(
+    shopifyReactRegex,
+    (_, named) => `${shim}const { ${named.replace(/\s+/g, " ").trim()} } = _require("@shopify/shopify-app-remix/react");`
+  );
+  console.log("✅ patched: @shopify/shopify-app-remix/react via createRequire");
+}
 
 writeFileSync(file, content);
