@@ -23,6 +23,9 @@ export default defineConfig({
       : { protocol: "wss", host, port: parseInt(process.env.FRONTEND_PORT) || 8002, clientPort: 443 },
     fs: { allow: ["app", "node_modules"] },
   },
+  ssr: {
+    noExternal: ["@shopify/shopify-app-remix", "@remix-run/react"],
+  },
   resolve: {
     alias: {
       "@shopify/shopify-app-remix/react": new URL("./node_modules/@shopify/shopify-app-remix/dist/esm/react/index.mjs", import.meta.url).pathname,
