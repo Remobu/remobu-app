@@ -24,7 +24,7 @@ export default defineConfig({
     fs: { allow: ["app", "node_modules"] },
   },
   ssr: {
-    noExternal: ["@shopify/shopify-app-remix", "@remix-run/react"],
+    noExternal: ["@remix-run/react"],
   },
   plugins: [remixVitePlugin(), tsconfigPaths()],
   build: { assetsInlineLimit: 0 },
