@@ -24,17 +24,6 @@ export default defineConfig({
     fs: { allow: ["app", "node_modules"] },
   },
   plugins: [vitePlugin(), tsconfigPaths()],
-  build: {
-    assetsInlineLimit: 0,
-  },
-  ssr: {
-    noExternal: [
-      "@shopify/shopify-app-remix",
-      "@shopify/polaris",
-      "@remix-run/react",
-    ],
-  },
-  optimizeDeps: {
-    include: ["@shopify/app-bridge-react"],
-  },
+  build: { assetsInlineLimit: 0 },
+  optimizeDeps: { include: ["@shopify/app-bridge-react"] },
 });
