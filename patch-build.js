@@ -2,13 +2,23 @@ import { readFileSync, writeFileSync } from "fs";
 const file = "build/server/index.js";
 let content = readFileSync(file, "utf8");
 
-// Only patch @remix-run/react - confirmed CJS
-// All other packages (@shopify/polaris, @shopify/shopify-app-remix) are true ESM
-const regex = /import \{([^}]+)\} from "@remix-run\/react";/s;
-content = content.replace(
-  regex,
-  (_, named) => `import remixReact from "@remix-run/react";\nconst {${named.replace(/\s+/g, " ").trim()}} = remixReact;`
-);
+const patches = [
+  ["@remix-run/react", "remixReact"],
+  ["@shopify/shopify-app-remix/react", "shopifyAppReact"],
+];
 
-console.log("✅ patch applied");
+for (const [pkg, alias] of patches) {
+  const escaped = pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`import \\{([^}]+)\\} from "${escaped}";`, "s");
+  if (regex.test(content)) {
+    content = content.replace(
+      regex,
+      (_, named) => `import ${alias} from "${pkg}";\nconst {${named.replace(/\s+/g, " ").trim()}} = ${alias};`
+    );
+    console.log(`✅ patched: ${pkg}`);
+  } else {
+    console.log(`⏭️  not found: ${pkg}`);
+  }
+}
+
 writeFileSync(file, content);
