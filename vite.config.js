@@ -16,14 +16,10 @@ const host = new URL(process.env.SHOPIFY_APP_URL || "http://localhost").hostname
 export default defineConfig({
   server: {
     allowedHosts: [host],
-    cors: { preflightContinue: true },
     port: Number(process.env.PORT || 3000),
-    hmr: host === "localhost"
-      ? { protocol: "ws", host: "localhost", port: 64999, clientPort: 64999 }
-      : { protocol: "wss", host, port: parseInt(process.env.FRONTEND_PORT) || 8002, clientPort: 443 },
+    hmr: false,
     fs: { allow: ["app", "node_modules"] },
   },
   plugins: [remixVitePlugin(), tsconfigPaths()],
   build: { assetsInlineLimit: 0 },
-  optimizeDeps: { include: ["@shopify/app-bridge-react"] },
 });
