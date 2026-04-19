@@ -1,6 +1,6 @@
-import { vitePlugin } from "@remix-run/dev";
-import { defineConfig } from "vite";
+import { vitePlugin as remixVitePlugin } from "@remix-run/dev";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { defineConfig } from "vite";
 
 if (
   process.env.HOST &&
@@ -26,12 +26,7 @@ export default defineConfig({
   ssr: {
     noExternal: ["@shopify/shopify-app-remix", "@remix-run/react"],
   },
-  resolve: {
-    alias: {
-      "@shopify/shopify-app-remix/react": new URL("./node_modules/@shopify/shopify-app-remix/dist/esm/react/index.mjs", import.meta.url).pathname,
-    },
-  },
-  plugins: [vitePlugin(), tsconfigPaths()],
+  plugins: [remixVitePlugin(), tsconfigPaths()],
   build: { assetsInlineLimit: 0 },
   optimizeDeps: { include: ["@shopify/app-bridge-react"] },
 });
