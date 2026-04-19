@@ -12,11 +12,11 @@ if (remixRegex.test(content)) {
   console.log("✅ patched: @remix-run/react");
 }
 
-// @shopify/shopify-app-remix/react is ESM but may need explicit path to CJS build
+// @shopify/shopify-app-remix/react - point to correct CJS path
 content = content.replace(
   `from "@shopify/shopify-app-remix/react"`,
-  `from "@shopify/shopify-app-remix/build/cjs/react/index.js"`
+  `from "@shopify/shopify-app-remix/dist/cjs/react/index.js"`
 );
-console.log("✅ patched: shopify-app-remix/react -> CJS path");
+console.log("✅ patched: shopify-app-remix/react -> dist/cjs");
 
 writeFileSync(file, content);
