@@ -31,7 +31,6 @@ export default defineConfig({
     noExternal: [
       "@shopify/polaris",
       "@shopify/app-bridge-react",
-      "@shopify/shopify-app-remix",
       "@shopify/shopify-api",
       "@google/generative-ai",
     ],
