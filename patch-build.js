@@ -5,7 +5,7 @@ const _require = createRequire(import.meta.url);
 const file = "build/server/index.js";
 let content = readFileSync(file, "utf8");
 
-// Fix 1: @remix-run/react CJS - convert named imports to default destructuring
+// Fix 1: @remix-run/react CJS
 content = content.replace(
   /^import \{([^}]+)\} from "@remix-run\/react";/m,
   (_, named) => {
@@ -14,16 +14,16 @@ content = content.replace(
   }
 );
 
-// Fix 2: AppProvider - replace ESM named import with require()
+// Fix 2: @shopify/polaris CJS
 content = content.replace(
-  /import \{([^}]*AppProvider[^}]*)\} from "@shopify\/shopify-app-remix\/react";/,
+  /^import \{([^}]+)\} from "@shopify\/polaris";/m,
   (_, named) => {
     const fixed = named.replace(/(\w+) as (\w+)/g, "$1: $2");
-    return `const {${fixed}} = _require("@shopify/shopify-app-remix/react");`;
+    return `import polarisPkg from "@shopify/polaris";\nconst {${fixed}} = polarisPkg;`;
   }
 );
 
-// Inject _require at top of file if not already present
+// Inject _require at top if needed
 if (!content.includes("createRequire")) {
   content = content.replace(
     /^(import )/m,
@@ -32,6 +32,6 @@ if (!content.includes("createRequire")) {
 }
 
 console.log("remix patch:", content.includes('import pkg from "@remix-run/react"') ? "✅" : "❌");
-console.log("AppProvider patch:", content.includes('_require("@shopify/shopify-app-remix/react")') ? "✅" : "❌");
+console.log("polaris patch:", content.includes('import polarisPkg from "@shopify/polaris"') ? "✅" : "❌");
 
 writeFileSync(file, content);
