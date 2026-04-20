@@ -27,6 +27,7 @@ export default defineConfig({
       "@shopify/polaris",
       "@shopify/app-bridge-react",
       "@shopify/shopify-app-remix",
+      "@google/generative-ai",
     ],
   },
 });
