@@ -22,4 +22,11 @@ export default defineConfig({
   },
   plugins: [remixVitePlugin(), tsconfigPaths()],
   build: { assetsInlineLimit: 0 },
+  ssr: {
+    noExternal: [
+      "@shopify/polaris",
+      "@shopify/app-bridge-react",
+      "@shopify/shopify-app-remix",
+    ],
+  },
 });
