@@ -1,6 +1,5 @@
 import { Outlet, useLoaderData, useRouteError } from "@remix-run/react";
 import { boundary } from "@shopify/shopify-app-remix/server";
-import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
@@ -11,9 +10,13 @@ export const loader = async ({ request }) => {
 export default function App() {
   const { apiKey } = useLoaderData();
   return (
-    <AppProvider isEmbeddedApp apiKey={apiKey}>
+    <>
+      <script
+        src="https://cdn.shopify.com/shopifycloud/app-bridge.js"
+        data-api-key={apiKey}
+      />
       <Outlet />
-    </AppProvider>
+    </>
   );
 }
 
