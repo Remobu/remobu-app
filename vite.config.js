@@ -21,14 +21,19 @@ export default defineConfig({
     fs: { allow: ["app", "node_modules"] },
   },
   plugins: [remixVitePlugin(), tsconfigPaths()],
-  build: { assetsInlineLimit: 0, rollupOptions: { external: ["@prisma/client", ".prisma/client/default"] } },
+  build: {
+    assetsInlineLimit: 0,
+    rollupOptions: {
+      external: ["@prisma/client", ".prisma/client/default"],
+    },
+  },
   ssr: {
     noExternal: [
       "@shopify/polaris",
       "@shopify/app-bridge-react",
       "@shopify/shopify-app-remix",
-      "@google/generative-ai",
       "@shopify/shopify-api",
+      "@google/generative-ai",
     ],
   },
 });
