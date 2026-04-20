@@ -30,7 +30,6 @@ export default defineConfig({
   ssr: {
     noExternal: [
       "@shopify/polaris",
-      "@shopify/app-bridge-react",
       "@shopify/shopify-api",
       "@google/generative-ai",
     ],
