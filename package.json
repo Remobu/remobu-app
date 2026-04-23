@@ -65,6 +65,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "graphql-config": "^5.1.1",
     "prettier": "^3.6.2",
+    "terser": "^5.46.2",
     "typescript": "^5.9.3",
     "vite": "^6.3.6"
   },
@@ -74,5 +75,8 @@
   "trustedDependencies": [
     "@shopify/plugin-cloudflare"
   ],
-  "author": "mpharoane"
+  "author": "mpharoane",
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.60.2"
+  }
 }
