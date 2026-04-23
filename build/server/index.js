@@ -5,7 +5,7 @@ import { jsx, jsxs, Fragment } from "react/jsx-runtime";
 import { PassThrough } from "stream";
 import { renderToPipeableStream } from "react-dom/server";
 import pkg from "@remix-run/react";
-const { ServerRouter, Meta, Links, Outlet, ScrollRestoration, Scripts, useRouteError, isRouteErrorResponse, useLoaderData, useActionData, useSubmit, useNavigation, Form, redirect } = pkg;
+const { ServerRouter, Meta, Links, Outlet, ScrollRestoration, Scripts, useRouteError, isRouteErrorResponse, useLoaderData, useActionData, useSubmit, useNavigation, data, Form, redirect } = pkg;
 import { createReadableStreamFromReadable, json } from "@remix-run/node";
 import { isbot } from "isbot";
 import "@shopify/shopify-app-remix/adapters/node";
