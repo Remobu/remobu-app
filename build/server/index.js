@@ -1,7 +1,7 @@
 var _a;
 import { createRequire as _cr } from "module";
 const _require = _cr(import.meta.url);
-import { jsx, jsxs, Fragment } from "react/jsx-runtime";
+import { jsx, jsxs } from "react/jsx-runtime";
 import { PassThrough } from "stream";
 import { renderToPipeableStream } from "react-dom/server";
 import pkg from "@remix-run/react";
@@ -12,8 +12,8 @@ import "@shopify/shopify-app-remix/adapters/node";
 import { shopifyApp, AppDistribution, ApiVersion, LoginErrorType, boundary } from "@shopify/shopify-app-remix/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prismaClientPkg from "@prisma/client";
-import React, { useContext, createContext, useEffect, useLayoutEffect, useRef, useState, PureComponent, useCallback, memo, forwardRef, useId, useImperativeHandle, createElement, useMemo, Children, isValidElement, createRef, useReducer } from "react";
-import { themes, breakpointsAliases, themeNameDefault, createThemeClassName, themeDefault, getMediaConditions } from "@shopify/polaris-tokens";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, PureComponent, useCallback, useMemo, forwardRef, Component, memo, useId, useImperativeHandle, createElement, Children, isValidElement, createRef, useReducer } from "react";
+import { themes, breakpointsAliases, themeNameDefault, createThemeClassName, themeDefault, getMediaConditions, themeNames } from "@shopify/polaris-tokens";
 import { SelectIcon, ChevronDownIcon, ChevronUpIcon, AlertCircleIcon, XCircleIcon, SearchIcon, MenuHorizontalIcon, ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon } from "@shopify/polaris-icons";
 import { createPortal } from "react-dom";
 const { PrismaClient } = prismaClientPkg;
@@ -589,6 +589,8 @@ function useEventListener(eventName, handler, target, options) {
   }, [eventName, target]);
 }
 const Breakpoints = {
+  // TODO: Update to smDown
+  navigationBarCollapsed: "767.95px",
   // TODO: Update to lgDown
   stackedContent: "1039.95px"
 };
@@ -603,6 +605,9 @@ const noWindowMatches = {
   dispatchEvent: (_) => true
 };
 function noop$3() {
+}
+function navigationBarCollapsed() {
+  return typeof window === "undefined" ? noWindowMatches : window.matchMedia(`(max-width: ${Breakpoints.navigationBarCollapsed})`);
 }
 function stackedContent() {
   return typeof window === "undefined" ? noWindowMatches : window.matchMedia(`(max-width: ${Breakpoints.stackedContent})`);
@@ -892,18 +897,18 @@ class StickyManager {
       themeDefault.space["space-500"],
       10
     ) : this.getOffset(stickyNode);
-    const scrollPosition = scrollTop + stickyOffset;
+    const scrollPosition2 = scrollTop + stickyOffset;
     const placeHolderNodeCurrentTop = placeHolderNode.getBoundingClientRect().top - containerTop + scrollTop;
     const top = containerTop + stickyOffset;
     const width = placeHolderNode.getBoundingClientRect().width;
     const left = placeHolderNode.getBoundingClientRect().left;
     let sticky;
     if (boundingElement == null) {
-      sticky = scrollPosition >= placeHolderNodeCurrentTop;
+      sticky = scrollPosition2 >= placeHolderNodeCurrentTop;
     } else {
       const stickyItemHeight = stickyNode.getBoundingClientRect().height || ((_a2 = stickyNode.firstElementChild) == null ? void 0 : _a2.getBoundingClientRect().height) || 0;
       const stickyItemBottomPosition = boundingElement.getBoundingClientRect().bottom - stickyItemHeight + scrollTop - containerTop;
-      sticky = scrollPosition >= placeHolderNodeCurrentTop && scrollPosition < stickyItemBottomPosition;
+      sticky = scrollPosition2 >= placeHolderNodeCurrentTop && scrollPosition2 < stickyItemBottomPosition;
     }
     return {
       sticky,
@@ -980,7 +985,142 @@ function horizontallyOverlaps(rect1, rect2) {
   const rect2Right = rect2.left + rect2.width;
   return rect2Right < rect1Left || rect1Right < rect2Left;
 }
+const SCROLL_LOCKING_ATTRIBUTE = "data-lock-scrolling";
+const SCROLL_LOCKING_HIDDEN_ATTRIBUTE = "data-lock-scrolling-hidden";
+const SCROLL_LOCKING_WRAPPER_ATTRIBUTE = "data-lock-scrolling-wrapper";
+let scrollPosition = 0;
+function isScrollBarVisible() {
+  const {
+    body
+  } = document;
+  return body.scrollHeight > body.clientHeight;
+}
+class ScrollLockManager {
+  constructor() {
+    this.scrollLocks = 0;
+    this.locked = false;
+  }
+  registerScrollLock() {
+    this.scrollLocks += 1;
+    this.handleScrollLocking();
+  }
+  unregisterScrollLock() {
+    this.scrollLocks -= 1;
+    this.handleScrollLocking();
+  }
+  handleScrollLocking() {
+    if (isServer) return;
+    const {
+      scrollLocks
+    } = this;
+    const {
+      body
+    } = document;
+    const wrapper = body.firstElementChild;
+    if (scrollLocks === 0) {
+      body.removeAttribute(SCROLL_LOCKING_ATTRIBUTE);
+      body.removeAttribute(SCROLL_LOCKING_HIDDEN_ATTRIBUTE);
+      if (wrapper) {
+        wrapper.removeAttribute(SCROLL_LOCKING_WRAPPER_ATTRIBUTE);
+      }
+      window.scroll(0, scrollPosition);
+      this.locked = false;
+    } else if (scrollLocks > 0 && !this.locked) {
+      scrollPosition = window.pageYOffset;
+      body.setAttribute(SCROLL_LOCKING_ATTRIBUTE, "");
+      if (!isScrollBarVisible()) {
+        body.setAttribute(SCROLL_LOCKING_HIDDEN_ATTRIBUTE, "");
+      }
+      if (wrapper) {
+        wrapper.setAttribute(SCROLL_LOCKING_WRAPPER_ATTRIBUTE, "");
+        wrapper.scrollTop = scrollPosition;
+      }
+      this.locked = true;
+    }
+  }
+  resetScrollPosition() {
+    scrollPosition = 0;
+  }
+}
+const OBJECT_NOTATION_MATCHER = /\[(.*?)\]|(\w+)/g;
+function get(obj, keypath, defaultValue) {
+  if (obj == null) return void 0;
+  const keys = Array.isArray(keypath) ? keypath : getKeypath(keypath);
+  let acc = obj;
+  for (let i = 0; i < keys.length; i++) {
+    const val = acc[keys[i]];
+    if (val === void 0) return defaultValue;
+    acc = val;
+  }
+  return acc;
+}
+function getKeypath(str) {
+  const path = [];
+  let result;
+  while (result = OBJECT_NOTATION_MATCHER.exec(str)) {
+    const [, first, second] = result;
+    path.push(first || second);
+  }
+  return path;
+}
+function merge(...objs) {
+  let final = {};
+  for (const obj of objs) {
+    final = mergeRecursively(final, obj);
+  }
+  return final;
+}
+function mergeRecursively(inputObjA, objB) {
+  const objA = Array.isArray(inputObjA) ? [...inputObjA] : {
+    ...inputObjA
+  };
+  for (const key in objB) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key)) {
+      continue;
+    } else if (isMergeableValue(objB[key]) && isMergeableValue(objA[key])) {
+      objA[key] = mergeRecursively(objA[key], objB[key]);
+    } else {
+      objA[key] = objB[key];
+    }
+  }
+  return objA;
+}
+function isMergeableValue(value) {
+  return value !== null && typeof value === "object";
+}
+const REPLACE_REGEX$1 = /{([^}]*)}/g;
+class I18n {
+  /**
+   * @param translation A locale object or array of locale objects that overrides default translations. If specifying an array then your desired language dictionary should come first, followed by your fallback language dictionaries
+   */
+  constructor(translation) {
+    this.translation = {};
+    this.translation = Array.isArray(translation) ? merge(...translation.slice().reverse()) : translation;
+  }
+  translate(id, replacements) {
+    const text2 = get(this.translation, id, "");
+    if (!text2) {
+      return "";
+    }
+    if (replacements) {
+      return text2.replace(REPLACE_REGEX$1, (match) => {
+        const replacement = match.substring(1, match.length - 1);
+        if (replacements[replacement] === void 0) {
+          const replacementData = JSON.stringify(replacements);
+          throw new Error(`Error in translation for key '${id}'. No replacement found for key '${replacement}'. The following replacements were passed: '${replacementData}'`);
+        }
+        return replacements[replacement];
+      });
+    }
+    return text2;
+  }
+  translationKeyExists(path) {
+    return Boolean(get(this.translation, path));
+  }
+}
+const FeaturesContext = /* @__PURE__ */ createContext(void 0);
 const I18nContext = /* @__PURE__ */ createContext(void 0);
+const ScrollLockManagerContext = /* @__PURE__ */ createContext(void 0);
 const StickyManagerContext = /* @__PURE__ */ createContext(void 0);
 const LinkContext = /* @__PURE__ */ createContext(void 0);
 const MediaQueryContext = /* @__PURE__ */ createContext(void 0);
@@ -1022,6 +1162,32 @@ class EventListener extends PureComponent {
     window.removeEventListener(event, handler, capture);
   }
 }
+const MediaQueryProvider = function MediaQueryProvider2({
+  children
+}) {
+  const [isNavigationCollapsed, setIsNavigationCollapsed] = useState(navigationBarCollapsed().matches);
+  const handleResize = useCallback(debounce(() => {
+    if (isNavigationCollapsed !== navigationBarCollapsed().matches) {
+      setIsNavigationCollapsed(!isNavigationCollapsed);
+    }
+  }, 40, {
+    trailing: true,
+    leading: true,
+    maxWait: 40
+  }), [isNavigationCollapsed]);
+  useEffect(() => {
+    setIsNavigationCollapsed(navigationBarCollapsed().matches);
+  }, []);
+  const context = useMemo(() => ({
+    isNavigationCollapsed
+  }), [isNavigationCollapsed]);
+  return /* @__PURE__ */ React.createElement(MediaQueryContext.Provider, {
+    value: context
+  }, /* @__PURE__ */ React.createElement(EventListener, {
+    event: "resize",
+    handler: handleResize
+  }), children);
+};
 function useIsAfterInitialMount() {
   const [isAfterInitialMount, setIsAfterInitialMount] = useState(false);
   useEffect(() => {
@@ -1030,7 +1196,206 @@ function useIsAfterInitialMount() {
   return isAfterInitialMount;
 }
 const PortalsManagerContext = /* @__PURE__ */ createContext(void 0);
+function PortalsContainerComponent(_props, ref) {
+  return /* @__PURE__ */ React.createElement("div", {
+    id: "PolarisPortalsContainer",
+    ref
+  });
+}
+const PortalsContainer = /* @__PURE__ */ forwardRef(PortalsContainerComponent);
+function PortalsManager({
+  children,
+  container
+}) {
+  const isMounted = useIsAfterInitialMount();
+  const ref = useRef(null);
+  const contextValue = useMemo(() => {
+    if (container) {
+      return {
+        container
+      };
+    } else if (isMounted) {
+      return {
+        container: ref.current
+      };
+    } else {
+      return {
+        container: null
+      };
+    }
+  }, [container, isMounted]);
+  return /* @__PURE__ */ React.createElement(PortalsManagerContext.Provider, {
+    value: contextValue
+  }, children, container ? null : /* @__PURE__ */ React.createElement(PortalsContainer, {
+    ref
+  }));
+}
+const FocusManagerContext = /* @__PURE__ */ createContext(void 0);
+function FocusManager({
+  children
+}) {
+  const [trapFocusList, setTrapFocusList] = useState([]);
+  const add = useCallback((id) => {
+    setTrapFocusList((list2) => [...list2, id]);
+  }, []);
+  const remove = useCallback((id) => {
+    let removed = true;
+    setTrapFocusList((list2) => {
+      const clone = [...list2];
+      const index2 = clone.indexOf(id);
+      if (index2 === -1) {
+        removed = false;
+      } else {
+        clone.splice(index2, 1);
+      }
+      return clone;
+    });
+    return removed;
+  }, []);
+  const value = useMemo(() => ({
+    trapFocusList,
+    add,
+    remove
+  }), [add, trapFocusList, remove]);
+  return /* @__PURE__ */ React.createElement(FocusManagerContext.Provider, {
+    value
+  }, children);
+}
 const EphemeralPresenceManagerContext = /* @__PURE__ */ createContext(void 0);
+const defaultState = {
+  tooltip: 0,
+  hovercard: 0
+};
+function EphemeralPresenceManager({
+  children
+}) {
+  const [presenceCounter, setPresenceCounter] = useState(defaultState);
+  const addPresence = useCallback((key) => {
+    setPresenceCounter((prevList) => ({
+      ...prevList,
+      [key]: prevList[key] + 1
+    }));
+  }, []);
+  const removePresence = useCallback((key) => {
+    setPresenceCounter((prevList) => ({
+      ...prevList,
+      [key]: prevList[key] - 1
+    }));
+  }, []);
+  const value = useMemo(() => ({
+    presenceList: Object.entries(presenceCounter).reduce((previousValue, currentValue) => {
+      const [key, value2] = currentValue;
+      return {
+        ...previousValue,
+        [key]: value2 >= 1
+      };
+    }, {}),
+    presenceCounter,
+    addPresence,
+    removePresence
+  }), [addPresence, removePresence, presenceCounter]);
+  return /* @__PURE__ */ React.createElement(EphemeralPresenceManagerContext.Provider, {
+    value
+  }, children);
+}
+const MAX_SCROLLBAR_WIDTH = 20;
+const SCROLLBAR_TEST_ELEMENT_PARENT_SIZE = 30;
+const SCROLLBAR_TEST_ELEMENT_CHILD_SIZE = SCROLLBAR_TEST_ELEMENT_PARENT_SIZE + 10;
+function measureScrollbars() {
+  var _a2;
+  const parentEl = document.createElement("div");
+  parentEl.setAttribute("style", `position: absolute; opacity: 0; transform: translate3d(-9999px, -9999px, 0); pointer-events: none; width:${SCROLLBAR_TEST_ELEMENT_PARENT_SIZE}px; height:${SCROLLBAR_TEST_ELEMENT_PARENT_SIZE}px;`);
+  const child = document.createElement("div");
+  child.setAttribute("style", `width:100%; height: ${SCROLLBAR_TEST_ELEMENT_CHILD_SIZE}; overflow:scroll; scrollbar-width: thin;`);
+  parentEl.appendChild(child);
+  document.body.appendChild(parentEl);
+  const scrollbarWidth = SCROLLBAR_TEST_ELEMENT_PARENT_SIZE - (((_a2 = parentEl.firstElementChild) == null ? void 0 : _a2.clientWidth) ?? 0);
+  const scrollbarWidthWithSafetyHatch = Math.min(scrollbarWidth, MAX_SCROLLBAR_WIDTH);
+  document.documentElement.style.setProperty("--pc-app-provider-scrollbar-width", `${scrollbarWidthWithSafetyHatch}px`);
+  document.body.removeChild(parentEl);
+}
+class AppProvider extends Component {
+  constructor(props) {
+    super(props);
+    this.setBodyStyles = () => {
+      document.body.style.backgroundColor = "var(--p-color-bg)";
+      document.body.style.color = "var(--p-color-text)";
+    };
+    this.setRootAttributes = () => {
+      const activeThemeName = this.getThemeName();
+      themeNames.forEach((themeName) => {
+        document.documentElement.classList.toggle(createThemeClassName(themeName), themeName === activeThemeName);
+      });
+    };
+    this.getThemeName = () => this.props.theme ?? themeNameDefault;
+    this.stickyManager = new StickyManager();
+    this.scrollLockManager = new ScrollLockManager();
+    const {
+      i18n,
+      linkComponent
+    } = this.props;
+    this.state = {
+      link: linkComponent,
+      intl: new I18n(i18n)
+    };
+  }
+  componentDidMount() {
+    if (document != null) {
+      this.stickyManager.setContainer(document);
+      this.setBodyStyles();
+      this.setRootAttributes();
+      const isSafari16 = navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome") && (navigator.userAgent.includes("Version/16.1") || navigator.userAgent.includes("Version/16.2") || navigator.userAgent.includes("Version/16.3"));
+      const isMobileApp16 = navigator.userAgent.includes("Shopify Mobile/iOS") && (navigator.userAgent.includes("OS 16_1") || navigator.userAgent.includes("OS 16_2") || navigator.userAgent.includes("OS 16_3"));
+      if (isSafari16 || isMobileApp16) {
+        document.documentElement.classList.add("Polaris-Safari-16-Font-Optical-Sizing-Patch");
+      }
+    }
+    measureScrollbars();
+  }
+  componentDidUpdate({
+    i18n: prevI18n,
+    linkComponent: prevLinkComponent
+  }) {
+    const {
+      i18n,
+      linkComponent
+    } = this.props;
+    this.setRootAttributes();
+    if (i18n === prevI18n && linkComponent === prevLinkComponent) {
+      return;
+    }
+    this.setState({
+      link: linkComponent,
+      intl: new I18n(i18n)
+    });
+  }
+  render() {
+    const {
+      children,
+      features
+    } = this.props;
+    const themeName = this.getThemeName();
+    const {
+      intl,
+      link
+    } = this.state;
+    return /* @__PURE__ */ React.createElement(ThemeNameContext.Provider, {
+      value: themeName
+    }, /* @__PURE__ */ React.createElement(ThemeContext.Provider, {
+      value: getTheme(themeName)
+    }, /* @__PURE__ */ React.createElement(FeaturesContext.Provider, {
+      value: features
+    }, /* @__PURE__ */ React.createElement(I18nContext.Provider, {
+      value: intl
+    }, /* @__PURE__ */ React.createElement(ScrollLockManagerContext.Provider, {
+      value: this.scrollLockManager
+    }, /* @__PURE__ */ React.createElement(StickyManagerContext.Provider, {
+      value: this.stickyManager
+    }, /* @__PURE__ */ React.createElement(LinkContext.Provider, {
+      value: link
+    }, /* @__PURE__ */ React.createElement(MediaQueryProvider, null, /* @__PURE__ */ React.createElement(PortalsManager, null, /* @__PURE__ */ React.createElement(FocusManager, null, /* @__PURE__ */ React.createElement(EphemeralPresenceManager, null, children)))))))))));
+  }
+}
 function isElementInViewport(element) {
   const {
     top,
@@ -1238,9 +1603,9 @@ const Text = ({
   if (process.env.NODE_ENV === "development" && variant && Object.prototype.hasOwnProperty.call(deprecatedVariants, variant)) {
     console.warn(`Deprecation: <Text variant="${variant}" />. The value "${variant}" will be removed in a future major version of Polaris. Use "${deprecatedVariants[variant]}" instead.`);
   }
-  const Component = as || (visuallyHidden ? "span" : "p");
+  const Component2 = as || (visuallyHidden ? "span" : "p");
   const className = classNames(styles$v.root, variant && styles$v[variant], fontWeight && styles$v[fontWeight], (alignment || truncate) && styles$v.block, alignment && styles$v[alignment], breakWord && styles$v.break, tone && styles$v[tone], numeric && styles$v.numeric, truncate && styles$v.truncate, visuallyHidden && styles$v.visuallyHidden, textDecorationLine && styles$v[textDecorationLine]);
-  return /* @__PURE__ */ React.createElement(Component, Object.assign({
+  return /* @__PURE__ */ React.createElement(Component2, Object.assign({
     className
   }, id && {
     id
@@ -1613,8 +1978,8 @@ function ShadowBevel(props) {
     children,
     zIndex = "0"
   } = props;
-  const Component = as;
-  return /* @__PURE__ */ React.createElement(Component, {
+  const Component2 = as;
+  return /* @__PURE__ */ React.createElement(Component2, {
     className: styles$t.ShadowBevel,
     style: {
       "--pc-shadow-bevel-z-index": zIndex,
@@ -3952,14 +4317,14 @@ function setActivatorAttributes(activator, {
     activator.setAttribute("aria-haspopup", String(ariaHaspopup));
   }
 }
-function wrapWithComponent(element, Component, props) {
+function wrapWithComponent(element, Component2, props) {
   if (element == null) {
     return null;
   }
-  return isElementOfType(element, Component) ? element : /* @__PURE__ */ React.createElement(Component, props, element);
+  return isElementOfType(element, Component2) ? element : /* @__PURE__ */ React.createElement(Component2, props, element);
 }
 const isComponent = process.env.NODE_ENV === "development" ? hotReloadComponentCheck : (AComponent, AnotherComponent) => AComponent === AnotherComponent;
-function isElementOfType(element, Component) {
+function isElementOfType(element, Component2) {
   var _a2;
   if (element == null || !/* @__PURE__ */ isValidElement(element) || typeof element.type === "string") {
     return false;
@@ -3969,7 +4334,7 @@ function isElementOfType(element, Component) {
   } = element;
   const overrideType = (_a2 = element.props) == null ? void 0 : _a2.__type__;
   const type = overrideType || defaultType;
-  const Components = Array.isArray(Component) ? Component : [Component];
+  const Components = Array.isArray(Component2) ? Component2 : [Component2];
   return Components.some((AComponent) => typeof type !== "string" && isComponent(AComponent, type));
 }
 function elementChildren(children, predicate = () => true) {
@@ -7155,7 +7520,7 @@ const loader = async ({ request }) => {
 };
 function App() {
   const { apiKey } = useLoaderData();
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
+  return /* @__PURE__ */ jsxs(AppProvider, { i18n: {}, children: [
     /* @__PURE__ */ jsx(
       "script",
       {
@@ -7179,7 +7544,7 @@ const route11 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.definePrope
   headers,
   loader
 }, Symbol.toStringTag, { value: "Module" }));
-const serverManifest = { "entry": { "module": "/assets/entry.client-BHx_31CP.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-DpLPBIDu.js", "/assets/components-cL_86RVJ.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": true, "module": "/assets/root-CdyTscmQ.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-DpLPBIDu.js", "/assets/components-cL_86RVJ.js"], "css": [] }, "routes/webhooks.app.scopes_update": { "id": "routes/webhooks.app.scopes_update", "parentId": "root", "path": "webhooks/app/scopes_update", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhooks.app.scopes_update-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/webhooks.app.uninstalled": { "id": "routes/webhooks.app.uninstalled", "parentId": "root", "path": "webhooks/app/uninstalled", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhooks.app.uninstalled-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/webhook.whatsapp.jsx": { "id": "routes/webhook.whatsapp.jsx", "parentId": "routes/webhook.whatsapp", "path": "jsx", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhook.whatsapp.jsx-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/webhook.whatsapp": { "id": "routes/webhook.whatsapp", "parentId": "root", "path": "webhook/whatsapp", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhook.whatsapp-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/app.additional": { "id": "routes/app.additional", "parentId": "routes/app", "path": "additional", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/app.additional-DMjoPPEa.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js"], "css": [] }, "routes/app.advisor": { "id": "routes/app.advisor", "parentId": "routes/app", "path": "advisor", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/app.advisor-D-BeGScA.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-DpLPBIDu.js", "/assets/components-cL_86RVJ.js"], "css": [] }, "routes/app._index": { "id": "routes/app._index", "parentId": "routes/app", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/app._index-CcVwUagd.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js"], "css": [] }, "routes/auth.login": { "id": "routes/auth.login", "parentId": "root", "path": "auth/login", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/route-CYYZJ-7N.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/components-cL_86RVJ.js", "/assets/index-DpLPBIDu.js"], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/route-CUpFB-eG.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/components-cL_86RVJ.js", "/assets/index-DpLPBIDu.js"], "css": ["/assets/route-Xpdx9QZl.css"] }, "routes/auth.$": { "id": "routes/auth.$", "parentId": "root", "path": "auth/*", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": true, "module": "/assets/auth._-DxBtCKik.js", "imports": ["/assets/index-m-PWGZFs.js", "/assets/index-DpLPBIDu.js", "/assets/jsx-runtime-0DLF9kdB.js"], "css": [] }, "routes/app": { "id": "routes/app", "parentId": "root", "path": "app", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": true, "module": "/assets/app-BUE4Znyw.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-m-PWGZFs.js", "/assets/components-cL_86RVJ.js", "/assets/index-DpLPBIDu.js"], "css": [] } }, "url": "/assets/manifest-21716270.js", "version": "21716270" };
+const serverManifest = { "entry": { "module": "/assets/entry.client-PPItTfFB.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-Br-1L6tH.js", "/assets/components-1fYImKjh.js"], "css": [] }, "routes": { "root": { "id": "root", "parentId": void 0, "path": "", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": true, "module": "/assets/root-DfKV58u3.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-Br-1L6tH.js", "/assets/components-1fYImKjh.js"], "css": [] }, "routes/webhooks.app.scopes_update": { "id": "routes/webhooks.app.scopes_update", "parentId": "root", "path": "webhooks/app/scopes_update", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhooks.app.scopes_update-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/webhooks.app.uninstalled": { "id": "routes/webhooks.app.uninstalled", "parentId": "root", "path": "webhooks/app/uninstalled", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhooks.app.uninstalled-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/webhook.whatsapp.jsx": { "id": "routes/webhook.whatsapp.jsx", "parentId": "routes/webhook.whatsapp", "path": "jsx", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhook.whatsapp.jsx-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/webhook.whatsapp": { "id": "routes/webhook.whatsapp", "parentId": "root", "path": "webhook/whatsapp", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/webhook.whatsapp-l0sNRNKZ.js", "imports": [], "css": [] }, "routes/app.additional": { "id": "routes/app.additional", "parentId": "routes/app", "path": "additional", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/app.additional-DMjoPPEa.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js"], "css": [] }, "routes/app.advisor": { "id": "routes/app.advisor", "parentId": "routes/app", "path": "advisor", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/app.advisor-DhdIUAje.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-Br-1L6tH.js", "/assets/components-1fYImKjh.js", "/assets/context-UeydZPlZ.js"], "css": [] }, "routes/app._index": { "id": "routes/app._index", "parentId": "routes/app", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": false, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/app._index-CcVwUagd.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js"], "css": [] }, "routes/auth.login": { "id": "routes/auth.login", "parentId": "root", "path": "auth/login", "index": void 0, "caseSensitive": void 0, "hasAction": true, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/route-C1kYsJkW.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/components-1fYImKjh.js", "/assets/index-Br-1L6tH.js"], "css": [] }, "routes/_index": { "id": "routes/_index", "parentId": "root", "path": void 0, "index": true, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": false, "module": "/assets/route-BWZYcFM1.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/components-1fYImKjh.js", "/assets/index-Br-1L6tH.js"], "css": ["/assets/route-Xpdx9QZl.css"] }, "routes/auth.$": { "id": "routes/auth.$", "parentId": "root", "path": "auth/*", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": true, "module": "/assets/auth._-x1pbOKcE.js", "imports": ["/assets/index-m-PWGZFs.js", "/assets/index-Br-1L6tH.js", "/assets/jsx-runtime-0DLF9kdB.js"], "css": [] }, "routes/app": { "id": "routes/app", "parentId": "root", "path": "app", "index": void 0, "caseSensitive": void 0, "hasAction": false, "hasLoader": true, "hasClientAction": false, "hasClientLoader": false, "hasErrorBoundary": true, "module": "/assets/app-Cx3W9S1q.js", "imports": ["/assets/jsx-runtime-0DLF9kdB.js", "/assets/index-m-PWGZFs.js", "/assets/components-1fYImKjh.js", "/assets/index-Br-1L6tH.js", "/assets/context-UeydZPlZ.js"], "css": ["/assets/app-CV7GIAUv.css"] } }, "url": "/assets/manifest-9c4b3322.js", "version": "9c4b3322" };
 const mode = "production";
 const assetsBuildDirectory = "build/client";
 const basename = "/";
