@@ -3,11 +3,11 @@
 client_id = "1c4a26173510f542edad46e43aab5587"
 name = "Remobu Advisor"
 application_url = "https://example.com"
+handle = "remobu-advisor"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-include_config_on_deploy = true
 
 [webhooks]
 api_version = "2026-07"

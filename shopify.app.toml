@@ -1,15 +1,18 @@
-name = "Remobu App"
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
 client_id = "9b4f8be68cc8f78b7a2691949fb40de4"
+name = "Remobu App"
 application_url = "https://remobu-app-production.up.railway.app"
 embedded = true
 
-[auth]
-redirect_urls = [
-  "https://remobu-app-production.up.railway.app/auth/callback"
-]
+[build]
+automatically_update_urls_on_dev = true
 
 [webhooks]
 api_version = "2026-07"
+
+[auth]
+redirect_urls = [ "https://remobu-app-production.up.railway.app/auth/callback" ]
 
 [pos]
 embedded = false
