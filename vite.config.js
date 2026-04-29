@@ -11,11 +11,12 @@ if (
   delete process.env.HOST;
 }
 
-const host = new URL(process.env.SHOPIFY_APP_URL || "http://localhost").hostname;
+const host = (process.env.SHOPIFY_APP_URL && process.env.SHOPIFY_APP_URL.startsWith("http")) ? new URL(process.env.SHOPIFY_APP_URL).hostname : "localhost";
 
 export default defineConfig({
   server: {
     allowedHosts: [host],
+    host: "127.0.0.1",
     port: Number(process.env.PORT || 3000),
     hmr: false,
     fs: { allow: ["app", "node_modules"] },
