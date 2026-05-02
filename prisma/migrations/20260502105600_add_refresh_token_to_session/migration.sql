@@ -1,0 +1,2 @@
+ALTER TABLE "Session" ADD COLUMN IF NOT EXISTS "refreshToken" TEXT;
+ALTER TABLE "Session" ADD COLUMN IF NOT EXISTS "refreshTokenExpires" TIMESTAMP(3);

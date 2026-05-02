@@ -21,8 +21,11 @@ export default defineConfig({
     hmr: false,
     fs: { allow: ["app", "node_modules"] },
   },
-  plugins: [remixVitePlugin(), tsconfigPaths()],
-  build: { cssMinify: "terser",
+  plugins: [remixVitePlugin({
+    browserNodeBuiltinsPolyfill: { modules: { module: true } },
+  }), tsconfigPaths()],
+  build: {
+    cssMinify: "terser",
     assetsInlineLimit: 0,
     rollupOptions: {
       external: ["@prisma/client", ".prisma/client/default"],

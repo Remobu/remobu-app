@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && remix vite:build && node --input-type=module < patch-build.js",
-    "dev": "shopify app dev --manual",
+    "dev": "remix dev --manual",
     "react-router": "react-router",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",

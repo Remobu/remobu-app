@@ -6,6 +6,7 @@ application_url = "https://remobu-app-production.up.railway.app"
 embedded = true
 
 [build]
+dev_command = "node_modules/.bin/remix dev"
 automatically_update_urls_on_dev = true
 
 [webhooks]
