@@ -1,4 +1,6 @@
 import { useActionData, useLoaderData, useSubmit, useNavigation, data } from "@remix-run/react";
+import { AppProvider } from "@shopify/polaris";
+import enTranslations from "@shopify/polaris/locales/en.json";
 import { useState } from "react";
 import { Page, Card, TextField, Button, Text, BlockStack, Select } from "@shopify/polaris";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -95,6 +97,7 @@ export default function Advisor() {
   };
 
   return (
+    <AppProvider i18n={enTranslations}>
     <Page title="REMOBU AI Farm Advisor">
       <BlockStack gap="400">
         <Card>
@@ -137,5 +140,6 @@ export default function Advisor() {
         )}
       </BlockStack>
     </Page>
+    </AppProvider>
   );
 }
