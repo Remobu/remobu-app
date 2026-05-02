@@ -18,5 +18,8 @@ scopes = "write_products,read_products,read_orders,write_orders,read_customers,w
 [auth]
 redirect_urls = [ "https://remobu-app-production.up.railway.app/auth/callback" ]
 
+[auth.token_exchange]
+enabled = true
+
 [pos]
 embedded = false
