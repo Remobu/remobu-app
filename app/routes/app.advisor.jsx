@@ -79,7 +79,7 @@ Farmer's question: ${question}`;
 }
 
 export default function Advisor() {
-  const { products } = useLoaderData();
+  const { products = [] } = useLoaderData() ?? {};
   const actionData = useActionData();
   const submit = useSubmit();
   const navigation = useNavigation();
