@@ -1,8 +1,8 @@
-import { useActionData, useLoaderData, useSubmit, useNavigation, data } from "@remix-run/react";
-import { AppProvider } from "@shopify/polaris";
-import enTranslations from "@shopify/polaris/locales/en.json";
+import { useActionData, useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
+import { data } from "@remix-run/react";
 import { useState } from "react";
-import { Page, Card, TextField, Button, Text, BlockStack, Select } from "@shopify/polaris";
+import { AppProvider, Page, Card, TextField, Button, Text, BlockStack, Select } from "@shopify/polaris";
+import enTranslations from "@shopify/polaris/locales/en.json";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { authenticate } from "../shopify.server";
 
@@ -14,51 +14,44 @@ export async function loader({ request }) {
         edges {
           node {
             title
-            description
-            priceRangeV2 {
-              minVariantPrice { amount currencyCode }
-            }
             productType
             tags
+            priceRangeV2 { minVariantPrice { amount currencyCode } }
           }
         }
       }
     }
   `);
   const json = await response.json();
-  const products = json.data.products.edges.map(e => e.node);
+  const products = json?.data?.products?.edges?.map(e => e.node) ?? [];
   return data({ products });
 }
 
 export async function action({ request }) {
   const { admin } = await authenticate.admin(request);
   const formData = await request.formData();
-  const question = formData.get("question");
-  const language = formData.get("language");
+  const question = formData.get("question") ?? "";
+  const language = formData.get("language") ?? "en";
 
-  // Fetch products for context
   const response = await admin.graphql(`
     query {
       products(first: 50) {
         edges {
           node {
             title
-            description
-            priceRangeV2 {
-              minVariantPrice { amount currencyCode }
-            }
             productType
             tags
+            priceRangeV2 { minVariantPrice { amount currencyCode } }
           }
         }
       }
     }
   `);
   const json = await response.json();
-  const products = json.data.products.edges.map(e => e.node);
+  const products = json?.data?.products?.edges?.map(e => e.node) ?? [];
   const productList = products.map(p =>
     `- ${p.title} (${p.productType}) | Price: ${p.priceRangeV2.minVariantPrice.amount} ${p.priceRangeV2.minVariantPrice.currencyCode} | Tags: ${p.tags.join(", ")}`
-  ).join("\n");
+  ).join("\n") || "No products listed.";
 
   const langInstruction = language === "st"
     ? "Respond in Sesotho (Sotho language of Lesotho)."
@@ -66,16 +59,7 @@ export async function action({ request }) {
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-  const prompt = `You are an expert agricultural advisor for Lesotho specializing in IPM (Integrated Pest Management), biofertilisers, and regenerative agriculture. ${langInstruction}
-
-You have access to the following REMOBU product catalog:
-${productList}
-
-When relevant, recommend specific products from the catalog above by name. Be concise and practical.
-
-Farmer's question: ${question}`;
-
+  const prompt = `You are an expert agricultural advisor for Lesotho. ${langInstruction}\n\nREMOBU products:\n${productList}\n\nFarmer's question: ${question}`;
   const result = await model.generateContent(prompt);
   return data({ answer: result.response.text() });
 }
@@ -98,48 +82,45 @@ export default function Advisor() {
 
   return (
     <AppProvider i18n={enTranslations}>
-    <Page title="REMOBU AI Farm Advisor">
-      <BlockStack gap="400">
-        <Card>
-          <BlockStack gap="300">
-            <Text variant="headingMd">Ask your farming question</Text>
-            <Select
-              label="Language / Puo"
-              options={[
-                { label: "English", value: "en" },
-                { label: "Sesotho", value: "st" },
-              ]}
-              value={language}
-              onChange={setLanguage}
-            />
-            <TextField
-              label="Question"
-              value={question}
-              onChange={setQuestion}
-              multiline={3}
-              placeholder="e.g. What controls work best for aphids on brassicas?"
-            />
-            <Button variant="primary" onClick={handleSubmit} loading={isLoading}>
-              Ask Advisor
-            </Button>
-          </BlockStack>
-        </Card>
-        <Card>
-          <BlockStack gap="200">
-            <Text variant="headingMd">Your REMOBU Products ({products.length})</Text>
-            <Text variant="bodySm" tone="subdued">These are loaded into the AI context automatically.</Text>
-          </BlockStack>
-        </Card>
-        {actionData?.answer && (
+      <Page title="REMOBU AI Farm Advisor">
+        <BlockStack gap="400">
           <Card>
-            <BlockStack gap="200">
-              <Text variant="headingMd">Advisor Response</Text>
-              <Text>{actionData.answer}</Text>
+            <BlockStack gap="300">
+              <Text variant="headingMd">Ask your farming question</Text>
+              <Select
+                label="Language / Puo"
+                options={[
+                  { label: "English", value: "en" },
+                  { label: "Sesotho", value: "st" },
+                ]}
+                value={language}
+                onChange={setLanguage}
+              />
+              <TextField
+                label="Question"
+                value={question}
+                onChange={setQuestion}
+                multiline={3}
+                placeholder="e.g. What controls work best for aphids on brassicas?"
+              />
+              <Button variant="primary" onClick={handleSubmit} loading={isLoading}>
+                Ask Advisor
+              </Button>
             </BlockStack>
           </Card>
-        )}
-      </BlockStack>
-    </Page>
+          <Card>
+            <Text variant="headingMd">Your REMOBU Products ({products.length})</Text>
+          </Card>
+          {actionData?.answer && (
+            <Card>
+              <BlockStack gap="200">
+                <Text variant="headingMd">Advisor Response</Text>
+                <Text>{actionData.answer}</Text>
+              </BlockStack>
+            </Card>
+          )}
+        </BlockStack>
+      </Page>
     </AppProvider>
   );
 }
