@@ -16,6 +16,17 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.static("public"));
+
+// Required for Shopify embedded app
+app.use((req, res, next) => {
+  const shop = req.query.shop || '';
+  if (shop) {
+    res.setHeader('Content-Security-Policy', `frame-ancestors https://${shop} https://admin.shopify.com;`);
+  } else {
+    res.setHeader('Content-Security-Policy', "frame-ancestors https://admin.shopify.com;");
+  }
+  next();
+});
 app.use(express.static("build/client"));
 
 async function startServer() {
