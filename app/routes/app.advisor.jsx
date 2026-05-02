@@ -63,7 +63,7 @@ export async function action({ request }) {
     : "Respond in English.";
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   const prompt = `You are an expert agricultural advisor for Lesotho specializing in IPM (Integrated Pest Management), biofertilisers, and regenerative agriculture. ${langInstruction}
 
