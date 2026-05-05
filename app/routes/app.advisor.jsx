@@ -57,11 +57,39 @@ export async function action({ request }) {
     ? "Respond in Sesotho (Sotho language of Lesotho)."
     : "Respond in English.";
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-  const prompt = `You are an expert agricultural advisor for Lesotho. ${langInstruction}\n\nREMOBU products:\n${productList}\n\nFarmer's question: ${question}`;
-  const result = await model.generateContent(prompt);
-  return data({ answer: result.response.text() });
+  const prompt = `You are an expert agricultural advisor for Lesotho specializing in IPM, biofertilisers, and regenerative agriculture. ${langInstruction}\n\nREMOBU products:\n${productList}\n\nFarmer question: ${question}`;
+
+  // Primary: AgrILLM by AI71
+  let answer;
+  try {
+    const agriRes = await fetch("https://api.ai71.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.AI71_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "AI71ai/Llama-agrillm-3.3-70B",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 512
+      })
+    });
+    const agriJson = await agriRes.json();
+    if (!agriJson.choices?.[0]?.message?.content) throw new Error("Empty AgrILLM response");
+    answer = agriJson.choices[0].message.content;
+  } catch (err) {
+    console.warn("AgrILLM failed, falling back to Gemini:", err.message);
+    try {
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const result = await model.generateContent(prompt);
+      answer = result.response.text();
+    } catch (err2) {
+      console.error("Both providers failed:", err2.message);
+      answer = "Sorry, the advisor is temporarily unavailable. Please try again shortly.";
+    }
+  }
+  return data({ answer });
 }
 
 export default function Advisor() {
