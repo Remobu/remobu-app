@@ -1,0 +1,42 @@
+REMOBU - 3 Year Financial Projections (EUR),,,
+Generated: May 2026,,,
+,,,
+ASSUMPTIONS,Year 1,Year 2,Year 3
+Active farmer subscribers,200,1500,6000
+Monthly subscription fee (EUR),2.50,2.50,3.00
+Active advisors on platform,10,40,120
+Advisor platform fee avg/month (EUR),10,15,20
+Marketplace GMV (EUR),1000,7500,30000
+Marketplace commission rate,7%,7%,8%
+B2B data sales (EUR),0,5000,20000
+,,,
+REVENUE,Year 1,Year 2,Year 3
+Farmer subscriptions (EUR),6000,45000,216000
+Advisor platform fees (EUR),1200,7200,28800
+Marketplace commissions (EUR),700,5250,24000
+B2B data insights (EUR),0,5000,20000
+TOTAL REVENUE (EUR),7900,62450,288800
+,,,
+COSTS,Year 1,Year 2,Year 3
+Tech infrastructure (EUR),12000,15000,20000
+AgrILLM / AI API costs (EUR),3000,8000,18000
+Mobile app development (EUR),15000,5000,5000
+Salaries - agronomist + mobiliser (EUR),18000,36000,60000
+Farmer acquisition & marketing (EUR),12000,20000,35000
+Advisor recruitment & vetting (EUR),6000,8000,12000
+Operations & legal (EUR),6000,6000,8000
+TOTAL COSTS (EUR),72000,98000,158000
+,,,
+P&L SUMMARY,Year 1,Year 2,Year 3
+Total Revenue (EUR),7900,62450,288800
+Total Costs (EUR),72000,98000,158000
+Net Profit / Loss (EUR),-64100,-35550,130800
+Cumulative P&L (EUR),-64100,-99650,31150
+,,,
+KEY METRICS,Year 1,Year 2,Year 3
+Monthly Recurring Revenue - MRR (EUR),658,5204,24067
+Customer Acquisition Cost - CAC (EUR),60,13,6
+Lifetime Value - LTV (EUR),30,45,54
+LTV:CAC Ratio,0.5x,3.5x,9x
+Gross Margin,55%,65%,75%
+Break-even Month,,,30
