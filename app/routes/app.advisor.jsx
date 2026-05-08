@@ -62,8 +62,11 @@ export async function action({ request }) {
   // Primary: AgrILLM by AI71
   let answer;
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     const agriRes = await fetch("https://api.ai71.ai/v1/chat/completions", {
       method: "POST",
+      signal: controller.signal,
       headers: {
         "Authorization": `Bearer ${process.env.AI71_API_KEY}`,
         "Content-Type": "application/json"
@@ -74,6 +77,7 @@ export async function action({ request }) {
         max_tokens: 512
       })
     });
+    clearTimeout(timeoutId);
     const agriJson = await agriRes.json();
     if (!agriJson.choices?.[0]?.message?.content) throw new Error("Empty AgrILLM response");
     answer = agriJson.choices[0].message.content;
