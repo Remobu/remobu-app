@@ -88,8 +88,9 @@ export async function action({ request }) {
       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await model.generateContent(prompt);
       answer = result.response.text();
+      console.log("Gemini success, answer length:", answer.length);
     } catch (err2) {
-      console.error("Both providers failed:", err2.message);
+      console.error("Both providers failed:", err2.message, err2.stack);
       answer = "Sorry, the advisor is temporarily unavailable. Please try again shortly.";
     }
   }
