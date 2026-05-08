@@ -1,4 +1,4 @@
-import { useActionData, useLoaderData, useSubmit, useNavigation } from "@remix-run/react";
+import { useActionData, useLoaderData, useFetcher, useNavigation } from "@remix-run/react";
 import { data } from "@remix-run/react";
 import { useState } from "react";
 import { AppProvider, Page, Card, TextField, Button, Text, BlockStack, Select } from "@shopify/polaris";
@@ -99,18 +99,18 @@ export async function action({ request }) {
 
 export default function Advisor() {
   const { products = [] } = useLoaderData() ?? {};
-  const actionData = useActionData();
-  const submit = useSubmit();
+  const fetcher = useFetcher();
+  const actionData = fetcher.data;
   const navigation = useNavigation();
   const [question, setQuestion] = useState("");
   const [language, setLanguage] = useState("en");
-  const isLoading = navigation.state === "submitting";
+  const isLoading = fetcher.state === "submitting";
 
   const handleSubmit = () => {
     const formData = new FormData();
     formData.append("question", question);
     formData.append("language", language);
-    submit(formData, { method: "post" });
+    fetcher.submit(formData, { method: "post" });
   };
 
   return (
