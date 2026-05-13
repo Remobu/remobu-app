@@ -5,6 +5,17 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const LOGO = "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/Remobu_Logo.jpg?v=1778694454";
 
+export async function loader({ request }) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
+}
+
 export async function action({ request }) {
   const formData = await request.formData();
   const question = formData.get("question");
@@ -21,7 +32,13 @@ export async function action({ request }) {
     console.error("Gemini error:", err);
     answer = "Sorry, the advisor is temporarily unavailable. Please try again shortly.";
   }
-  return data({ answer });
+  return data({ answer }, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
 }
 
 export default function PublicAdvisor() {
