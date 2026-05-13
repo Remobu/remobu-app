@@ -72,7 +72,7 @@ RESPONSE STYLE:
 - Concise and practical — farmers are busy
 - Always give at least one actionable next step
 - Use local crop names and measurements farmers recognize
-- Never be condescending — treat farmers as experts of their own land\`;
+- Never be condescending — treat farmers as experts of their own land`;
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
