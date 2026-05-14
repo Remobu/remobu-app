@@ -43,9 +43,11 @@ app.post("/api/advisor", express.json(), async (req, res) => {
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const systemContext = `You are Remobu Farm Advisor, an expert agricultural assistant serving farmers in Lesotho and SADC countries. You specialize in crops, soil health, pests, livestock, and farming practices relevant to Southern Africa. Always be helpful, practical, and culturally aware. You were created by Remobu.`;
+    const systemContext = `You are Remobu Farm Advisor, an expert agricultural assistant serving farmers in Lesotho and SADC countries. You specialize in crops, soil health, pests, livestock, and farming practices relevant to Southern Africa. Always be helpful, practical, and culturally aware. You were created by Remobu.`;
     const prompt = language && language !== "en"
-      ? `Answer in ${language}: ${question}`
-      : question;
+      ? `${systemContext}\n\nAnswer in ${language}: ${question}`
+      : `${systemContext}\n\n${question}`;
     const result = await model.generateContent(prompt);
     const answer = result.response.text();
     res.json({ answer });

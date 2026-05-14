@@ -1,0 +1,339 @@
+<!doctype html>
+<html
+  {% if request.design_mode %}
+    class="shopify-design-mode"
+  {% endif %}
+  lang="{{ request.locale.iso_code }}"
+>
+  <head>
+    <meta name="facebook-domain-verification" content="agdmh64cntvqp909fnsazwv5ay1oly" />
+    {%- if settings.favicon != blank -%}
+      <link
+        rel="icon"
+        type="image/png"
+        href="{{ settings.favicon | image_url: width: 32, height: 32 }}"
+      >
+    {%- endif -%}
+
+    {% comment %} This a way to wait for main content to load when navigating to a new page so that the view transitions can work consistently {% endcomment %}
+    {% if settings.transition_to_main_product or settings.page_transition_enabled %}
+      <link
+        rel="expect"
+        href="#MainContent"
+        blocking="render"
+        id="view-transition-render-blocker"
+      >
+    {% endif %}
+
+    {%- render 'meta-tags' -%}
+    {%- render 'stylesheets' -%}
+    {%- render 'fonts' -%}
+    {%- render 'scripts' -%}
+    {%- render 'theme-styles-variables' -%}
+    {%- render 'color-schemes' -%}
+
+    {% if request.design_mode %}
+      {%- render 'theme-editor' -%}
+    {% endif %}
+
+    {{ content_for_header }}
+  </head>
+
+  <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
+    {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
+    <div id="header-group">
+      {% sections 'header-group' %}
+    </div>
+
+    <script>
+      // Inline header height and menu style calculations to prevent layout shift
+      // Note: Updates in calculateHeaderGroupHeight(), updateTransparentHeaderOffset() and setHeaderMenuStyle() utilities.js should be kept in sync with this function
+      (function setHeaderHeighCustomProperties() {
+        /*
+         * Header calculation functions for maintaining CSS variables
+         * Mimic calculateHeaderGroupHeight() in utilities.js
+         */
+        const header = document.querySelector('header-component');
+        const headerGroup = document.querySelector('#header-group');
+        const hasHeaderSection = headerGroup?.querySelector('.header-section');
+
+        if (!header || !headerGroup) return;
+
+        const headerHeight = header.offsetHeight;
+
+        // Calculate the total height of the header group
+        let headerGroupHeight = 0;
+        const children = headerGroup.children;
+        for (let i = 0; i < children.length; i++) {
+          const element = children[i];
+          if (element === header || !(element instanceof HTMLElement)) continue;
+          headerGroupHeight += element.offsetHeight;
+        }
+
+        // Check for transparent header special case
+        if (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
+          headerGroupHeight += headerHeight;
+        }
+
+        // Set CSS variables
+        document.body.style.setProperty('--header-height', `${headerHeight}px`);
+        document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
+
+        /**
+         * Updates CSS custom properties for transparent header offset calculation
+         * Mimic updateTransparentHeaderOffset() in utilities.js
+         */
+
+        if (!hasHeaderSection || !header?.hasAttribute('transparent')) {
+          document.body.style.setProperty('--transparent-header-offset-boolean', '0');
+          return;
+        }
+
+        const hasImmediateSection = hasHeaderSection.nextElementSibling?.classList.contains('shopify-section');
+
+        const shouldApplyOffset = !hasImmediateSection ? '1' : '0';
+        document.body.style.setProperty('--transparent-header-offset-boolean', shouldApplyOffset);
+      })();
+
+      (function setHeaderMenuStyle() {
+        const headerComponent = document.querySelector('#header-component');
+        if (headerComponent) {
+          const isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0;
+          const overflowList = headerComponent?.querySelector('overflow-list');
+          const hasReachedMinimum = overflowList && overflowList.hasAttribute('minimum-reached');
+          headerComponent.dataset.menuStyle = isTouchDevice || hasReachedMinimum ? 'drawer' : 'menu';
+        }
+      })();
+    </script>
+
+    <main
+      id="MainContent"
+      class="content-for-layout"
+      role="main"
+      data-page-transition-enabled="{{ settings.page_transition_enabled }}"
+      data-product-transition="{{ settings.transition_to_main_product }}"
+      data-template="{{ template }}"
+    >
+      {{ content_for_layout }}
+    </main>
+
+    {% sections 'footer-group' %}
+
+    {% render 'search-modal' %}
+
+    {% if settings.quick_add or settings.mobile_quick_add %}
+      {% render 'quick-add-modal' %}
+    {% endif %}
+   <!-- Remobu Floating Buttons -->
+<style>
+  /* WhatsApp Button - Bottom Right */
+  .remobu-whatsapp-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    background-color: #25D366;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 9999;
+    text-decoration: none;
+    transition: transform 0.2s;
+  }
+  .remobu-whatsapp-btn:hover { transform: scale(1.1); }
+  .remobu-whatsapp-btn svg { width: 32px; height: 32px; fill: white; }
+  .remobu-whatsapp-tooltip {
+    position: fixed;
+    bottom: 92px;
+    right: 24px;
+    background: #2D5233;
+    color: #F5F0E8;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    white-space: nowrap;
+    display: none;
+    z-index: 9999;
+  }
+  .remobu-whatsapp-btn:hover + .remobu-whatsapp-tooltip { display: block; }
+
+  /* Farm Advisor Button - Bottom Left */
+  .remobu-advisor-btn {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    width: 60px;
+    height: 60px;
+    background-color: #2D5233;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    cursor: pointer;
+    z-index: 9999;
+    border: none;
+    transition: transform 0.2s;
+  }
+  .remobu-advisor-btn:hover { transform: scale(1.1); }
+  .remobu-advisor-btn svg { width: 32px; height: 32px; }
+
+  /* Chat Panel */
+  .remobu-chat-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 360px;
+    height: 520px;
+    background: #2D5233;
+    border-radius: 0 16px 0 0;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
+  }
+  .remobu-chat-panel.open { display: flex; }
+  .remobu-chat-header {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #C9922A;
+  }
+  .remobu-chat-header-text h3 {
+    color: #C9922A;
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  .remobu-chat-header-text p {
+    color: #F5F0E8;
+    margin: 2px 0 0;
+    font-size: 12px;
+    font-style: italic;
+  }
+  .remobu-close-btn {
+    background: none;
+    border: none;
+    color: #F5F0E8;
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .remobu-chat-body {
+    flex: 1;
+    overflow: hidden;
+  }
+  .remobu-chat-body iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+  }
+
+  @media (max-width: 480px) {
+    .remobu-chat-panel { width: 100%; border-radius: 0; }
+  }
+</style>
+
+<!-- WhatsApp Button -->
+<!-- Remobu Farm Advisor Widget -->
+<style>
+.remobu-advisor-btn{position:fixed;bottom:20px;left:20px;width:52px;height:52px;border-radius:50%;background:#2D5233;border:none;cursor:pointer;z-index:9999;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.remobu-advisor-btn img{width:100%;height:100%;border-radius:50%;object-fit:contain;background:white;}
+.remobu-chat-panel{display:none;position:fixed;bottom:80px;left:20px;width:300px;height:480px;background:#F5F0E8;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:9999;flex-direction:column;overflow:hidden;}
+.remobu-chat-panel.open{display:flex;}
+.remobu-chat-header{background:#2D5233;padding:12px;display:flex;align-items:center;gap:10px;}
+.remobu-chat-header img{width:36px;height:36px;border-radius:50%;background:white;padding:2px;object-fit:contain;}
+.remobu-chat-header h3{color:#C9922A;margin:0;font-size:15px;}
+.remobu-chat-header p{color:#F5F0E8;margin:0;font-size:11px;font-style:italic;}
+.remobu-close-btn{margin-left:auto;background:none;border:none;color:#F5F0E8;font-size:20px;cursor:pointer;}
+.remobu-chat-body{flex:1;padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+.remobu-message{background:white;border-radius:10px;padding:12px;border-left:3px solid #C9922A;font-size:13px;line-height:1.6;color:#333;}
+.remobu-input-area{background:white;padding:10px;border-top:2px solid #2D5233;}
+.remobu-input-area select{width:100%;padding:5px;margin-bottom:8px;border-radius:5px;border:1px solid #ccc;font-size:12px;color:#2D5233;}
+.remobu-input-row{display:flex;gap:6px;}
+.remobu-input-area textarea{flex:1;padding:7px;border-radius:5px;border:1px solid #ccc;font-size:12px;resize:none;font-family:inherit;}
+.remobu-ask-btn{background:#2D5233;color:white;border:none;padding:7px 12px;border-radius:5px;cursor:pointer;font-weight:bold;font-size:12px;}
+.remobu-ask-btn:disabled{background:#888;cursor:not-allowed;}
+</style>
+
+<button class="remobu-advisor-btn" onclick="document.querySelector('.remobu-chat-panel').classList.toggle('open')" aria-label="Open Farm Advisor">
+  <img src="https://cdn.shopify.com/s/files/1/0975/4057/1438/files/Remobu_Logo.jpg?v=1778694454" alt="Remobu"/>
+</button>
+
+<div class="remobu-chat-panel">
+  <div class="remobu-chat-header">
+    <img src="https://cdn.shopify.com/s/files/1/0975/4057/1438/files/Remobu_Logo.jpg?v=1778694454" alt="Remobu"/>
+    <div><h3>Remobu Farm Advisor</h3><p>we're the soil</p></div>
+    <button class="remobu-close-btn" onclick="document.querySelector('.remobu-chat-panel').classList.remove('open')">✕</button>
+  </div>
+  <div class="remobu-chat-body" id="remobu-chat-body">
+    <div class="remobu-message">👋 Hello! I'm your <strong>Remobu Farm Advisor</strong>. Ask me anything about farming, crops, soil health, or pests!</div>
+  </div>
+  <div class="remobu-input-area">
+    <select id="remobu-lang">
+      <option value="en">🇬🇧 English</option>
+      <option value="st">🇱🇸 Sesotho</option>
+    </select>
+    <div class="remobu-input-row">
+      <textarea id="remobu-question" rows="2" placeholder="Ask your farming question..."></textarea>
+      <button class="remobu-ask-btn" id="remobu-ask-btn" onclick="remobAsk()">Ask</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function remobAsk() {
+  const question = document.getElementById('remobu-question').value.trim();
+  const language = document.getElementById('remobu-lang').value;
+  const body = document.getElementById('remobu-chat-body');
+  const btn = document.getElementById('remobu-ask-btn');
+  if (!question) return;
+  btn.disabled = true;
+  btn.textContent = '...';
+  const thinkMsg = document.createElement('div');
+  thinkMsg.className = 'remobu-message';
+  thinkMsg.textContent = '🌱 Thinking...';
+  thinkMsg.id = 'remobu-thinking';
+  body.appendChild(thinkMsg);
+  body.scrollTop = body.scrollHeight;
+  const formData = {};
+  formData['question'] = question;
+  formData['language'] = language;
+  fetch('https://remobu-app-production.up.railway.app/api/advisor', {
+    method: 'POST',
+    body: JSON.stringify(formData),
+    headers: {'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(data => {
+    const answer = data.answer || 'Sorry, could not get a response.';
+    document.getElementById('remobu-thinking').remove();
+    const msg = document.createElement('div');
+    msg.className = 'remobu-message';
+    msg.innerHTML = '<strong style="color:#2D5233">🌾 Advisor</strong><br>' + answer.replace(/\n/g,'<br>');
+    body.appendChild(msg);
+    body.scrollTop = body.scrollHeight;
+    document.getElementById('remobu-question').value = '';
+    btn.disabled = false;
+    btn.textContent = 'Ask';
+  })
+  .catch(() => {
+    document.getElementById('remobu-thinking').textContent = '❌ Connection error. Please try again.';
+    btn.disabled = false;
+    btn.textContent = 'Ask';
+  });
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey && document.activeElement.id === 'remobu-question') {
+    e.preventDefault();
+    remobAsk();
+  }
+});
+</script>
+<!-- End Remobu Floating Buttons -->
