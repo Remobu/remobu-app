@@ -42,7 +42,7 @@ app.post("/api/advisor", express.json(), async (req, res) => {
     const { question, language } = req.body;
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-04-17" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const prompt = language && language !== "en"
       ? `Answer in ${language}: ${question}`
       : question;
