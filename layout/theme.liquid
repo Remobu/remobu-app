@@ -323,7 +323,7 @@ function remobAsk() {
     const msg = document.createElement('div');
     msg.className = 'remobu-message';
     const cleanAnswer = answer.replace(/\*\*/g,'').replace(/\*/g,'').replace(/\n/g,'<br>');
-    msg.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><img src="https://cdn.shopify.com/s/files/1/0682/2459/0686/files/remobu-logo-white.png" style="width:20px;height:20px;border-radius:50%;background:#2D5233;padding:2px;" onerror="this.style.display=\'none\'"><strong style="color:#2D5233">🌾 Remobu Farm Advisor</strong></div>' + cleanAnswer;
+    msg.innerHTML = '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"><img src="https://cdn.shopify.com/s/files/1/0975/4057/1438/files/Remobu_Logo.jpg?v=1778694454" style="width:22px;height:22px;border-radius:50%;object-fit:contain;background:white;padding:1px;border:1px solid #2D5233;"><strong style="color:#2D5233">Remobu Farm Advisor</strong></div>' + cleanAnswer;
     body.appendChild(msg);
     body.scrollTop = body.scrollHeight;
     document.getElementById('remobu-question').value = '';
