@@ -40,6 +40,7 @@
     "@shopify/shopify-app-remix": "^4.2.0",
     "@shopify/shopify-app-session-storage": "^5.0.0",
     "@shopify/shopify-app-session-storage-prisma": "^9.0.0",
+    "bcryptjs": "^3.0.3",
     "express": "^4.22.1",
     "isbot": "^5.1.31",
     "node-fetch": "^3.3.2",
