@@ -33,7 +33,13 @@ export async function action({ request }) {
     const from = message.from;
     const text2 = message.text?.body || "Hello";
     console.log(`📱 Message from ${from}: ${text2}`);
-    const reply = await getGeminiResponse(text2);
+    const rawReply = await getGeminiResponse(text2);
+    const reply = rawReply
+      .replace(/\*\*(.*?)\*\*/gs, '$1')
+      .replace(/\*(.*?)\*/gs, '$1')
+      .replace(/#{1,6}\s?/g, '')
+      .replace(/`{1,3}/g, '')
+      .trim();
     await sendWhatsAppMessage(from, reply);
     return json({ status: "ok" });
   } catch (err) {
