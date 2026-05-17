@@ -20,3 +20,11 @@ redirect_urls = [ "https://remobu-app-production.up.railway.app/auth/callback" ]
 
 [pos]
 embedded = false
+
+[[embedded.navigation_items]]
+label = "🌱 Remobu Advisor"
+destination = "/app/advisor-dashboard"
+
+[[embedded.navigation_items]]
+label = "🛡️ Advisor Admin"
+destination = "/app/advisor-admin"
