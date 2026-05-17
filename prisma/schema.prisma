@@ -91,6 +91,9 @@ model Farmer {
   walletBalance Float    @default(0)
   advisorId     String?
   advisor       Advisor? @relation(fields: [advisorId], references: [id])
+  cohortId      String?
+  cohort        Cohort?  @relation(fields: [cohortId], references: [id])
+  transactions  Transaction[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -112,6 +115,8 @@ model Advisor {
   isVerified          Boolean          @default(false)
   isActive            Boolean          @default(true)
   farmers             Farmer[]
+  cohorts             Cohort[]
+  transactions        Transaction[]
   queries             Query[]          @relation("AdvisorQueries")
   subscriptions       AdvisorSubscription[]
   payouts             Payout[]
@@ -175,4 +180,28 @@ model Payout {
   periodStart DateTime
   periodEnd   DateTime
   createdAt   DateTime      @default(now())
+}
+
+model Cohort {
+  id           String    @id @default(cuid())
+  name         String
+  advisorId    String
+  advisor      Advisor   @relation(fields: [advisorId], references: [id])
+  feePerFarmer Float
+  farmers      Farmer[]
+  createdAt    DateTime  @default(now())
+}
+
+model Transaction {
+  id             String   @id @default(cuid())
+  advisorId      String
+  advisor        Advisor  @relation(fields: [advisorId], references: [id])
+  farmerId       String?
+  farmer         Farmer?  @relation(fields: [farmerId], references: [id])
+  grossAmount    Float
+  platformCut    Float
+  advisorEarning Float
+  type           String
+  status         String   @default("COMPLETED")
+  createdAt      DateTime @default(now())
 }
