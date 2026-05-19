@@ -166,19 +166,34 @@ TOPICS YOU MUST HANDLE:
 }
 
 async function sendWhatsAppMessage(to, message) {
-  const res = await fetch(`https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-    },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "text",
-      text: { body: message },
-    }),
-  });
-  const result = await res.json();
-  console.log("📤 WhatsApp send result:", JSON.stringify(result));
+  const MAX_LENGTH = 4000;
+  const chunks = [];
+  let text = message.trim();
+  while (text.length > 0) {
+    if (text.length <= MAX_LENGTH) {
+      chunks.push(text);
+      break;
+    }
+    let splitAt = text.lastIndexOf("\n", MAX_LENGTH);
+    if (splitAt === -1 || splitAt < MAX_LENGTH * 0.5) splitAt = MAX_LENGTH;
+    chunks.push(text.slice(0, splitAt).trim());
+    text = text.slice(splitAt).trim();
+  }
+  for (const chunk of chunks) {
+    const res = await fetch(`https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to,
+        type: "text",
+        text: { body: chunk },
+      }),
+    });
+    const result = await res.json();
+    console.log("📤 WhatsApp send result:", JSON.stringify(result));
+  }
 }
