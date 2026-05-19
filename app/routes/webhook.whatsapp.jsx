@@ -78,19 +78,44 @@ RESPONSE STYLE:
 - Concise and practical — farmers are busy
 - Always give at least one actionable next step
 - Use local crop names and measurements farmers recognize
-- Never be condescending — treat farmers as experts of their own land`;
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: `${systemPrompt}\n\nFarmer: ${userMessage}` }] }],
-      }),
+- Never be condescending — treat farmers as experts of their own land
+- If you do not know or are not confident, say clearly: "I don't have specific information on that. Please contact a Remobu advisor for detailed guidance." Never stay silent or give a vague non-answer.
+
+TOPICS YOU MUST HANDLE:
+- Livestock farming: rabbits, poultry, cattle, goats, pigs — including commercial breeding and husbandry
+- Agro-processing and value-added products: biltong, dried meats, dairy, packaging, food safety
+- Agricultural business models tailored for Lesotho and SADC markets
+- Export opportunities: AfCFTA, AGOA, SADC trade protocols, South Africa as regional hub
+- Market linkages, pricing strategy, and off-taker identification`;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  let response;
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${systemPrompt}\n\nFarmer: ${userMessage}` }] }],
+        }),
+        signal: controller.signal,
+      }
+    );
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      return "⏳ My response is taking longer than usual. Please resend your question and I will try again.";
     }
-  );
+    return "⚠️ I could not reach my knowledge base right now. Please try again in a moment.";
+  }
+  clearTimeout(timeoutId);
   const data = await response.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || "I could not process your request. Please try again.";
+  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!reply || reply.trim() === "") {
+    return "🤔 I don't have enough information to answer that confidently. Please contact a Remobu advisor for detailed guidance.";
+  }
+  return reply;
 }
 
 async function sendWhatsAppMessage(to, message) {
