@@ -59,7 +59,7 @@ export async function action({ request }) {
     console.log(`📱 Message from ${from}: ${userMessage}`);
 
     // Editor-in-Chief override
-    if (from === "26663475043") {
+    if (from === "26663475043" && userMessage.toLowerCase().startsWith("editor:")) {
       const overrides = global.editorInstructions || [];
       overrides.push(userMessage);
       if (overrides.length > 20) overrides.splice(0, overrides.length - 20);
