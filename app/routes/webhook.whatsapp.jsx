@@ -41,10 +41,13 @@ export async function action({ request }) {
       await sendWhatsAppMessage(from, "🎤 I received your voice message. Voice transcription is coming soon. Please type your question for now and I will assist you right away.");
       return json({ status: "ok" });
     } else if (msgType === "image") {
-      await sendWhatsAppMessage(from, "🖼️ I received your image. Image analysis is coming soon. Please describe what you see or your question in text and I will help you.");
+      const imgCaption = message.image?.caption || "";
+      const imgLang = imgCaption ? ` (respond in the same language as this caption: "${imgCaption.slice(0,30)}")` : "";
+      await sendWhatsAppMessage(from, "🖼️ I received your image." + (imgCaption ? ` You said: "${imgCaption}". Let me help!` : " Please describe what you see in text and I will assist you."));
       return json({ status: "ok" });
     } else if (msgType === "video") {
-      await sendWhatsAppMessage(from, "📹 I received your video. Video analysis is coming soon. Please describe your farming situation in text and I will assist you.");
+      const vidCaption = message.video?.caption || "";
+      await sendWhatsAppMessage(from, "📹 I received your video." + (vidCaption ? ` You said: "${vidCaption}". Let me help!` : " Please describe your farming situation in text and I will assist you."));
       return json({ status: "ok" });
     } else {
       await sendWhatsAppMessage(from, "I received your message but I am not able to process that format yet. Please send a text message and I will help you right away.");
@@ -67,7 +70,7 @@ export async function action({ request }) {
 
 
     // --- SEND INSTANT ACKNOWLEDGEMENT ---
-    await sendLogoMessage(from, "⏳ Received! Preparing your advice...");
+    await sendWhatsAppMessage(from, "🌱 Received! Preparing your advice...");
 
     // --- GET GEMINI RESPONSE ---
     const rawReply = await getGeminiResponse(userMessage, from);
@@ -104,12 +107,16 @@ async function getGeminiResponse(userMessage, from = "unknown") {
 
   const systemPrompt = `You are the Remobu Farm Advisor, a comprehensive expert in African agriculture and food systems. Your expertise spans: 1. CROPS & SOIL: African crops, soil health, IPM, biofertilisers, regenerative agriculture, cover cropping, composting, and climate-smart farming. 2. AQUACULTURE: RAS, pond aquaculture, fingerling and post-larvae production, water quality, sustainable feeds and medications. Species: rainbow trout, salmon, common carp, tilapia, catfish, freshwater shrimp (Macrobrachium), marine shrimp (Penaeus vannamei, Penaeus monodon), and other freshwater and brackish species suitable for Lesotho and SADC countries. 3. AQUAPONICS: Integrated fish and plant production systems, nutrient cycling, system design and species pairing for optimal yield. 4. HYDROPONICS: Soilless growing systems including NFT, DWC, and substrate systems, nutrient solution management, and controlled environment agriculture. 5. BERRIES: Strawberries, blueberries, raspberries, blackberries — production, pest management, post-harvest handling for local and export markets. 6. ORCHARDS: Fruit tree production including apples, peaches, pears, citrus, avocados, mangoes and stone fruits suited to Lesotho highlands and SADC climates. 7. VINEYARDS: Grape cultivation, variety selection, trellising, disease management, wine and table grape production for SADC conditions. 8. ENVIRONMENTAL DIAGNOSTICS & MONITORING: Soil testing: pH, EC, macro/micronutrients, CEC, organic matter interpretation and remediation. Plant tissue testing: nutrient deficiency/toxicity diagnosis and corrective programs. Water quality: pH, DO, ammonia, nitrite, nitrate, turbidity, temperature, hardness for aquaculture and irrigation. Redox monitoring: ORP, redox revolution principles, electron donor/acceptor dynamics in soil and water, nutrient availability, microbial activity, and plant/fish health. Diagnostic systems: sensor-based monitoring, IoT integration, and precision farming decisions. Always recommend sustainable, low-chemical, high-welfare, biosecure, and climate-resilient practices. Ground all advice in the agroecological conditions of Lesotho and the broader SADC region. SADC SMALLHOLDER BASELINE DATA: LESOTHO: avg farm 0.5-1.2ha, 85% informal markets, <5% irrigated, staples=maize/sorghum/beans, ~70% rural households are net food buyers, ~60% income from off-farm sources, emerging rainbow trout (highlands) and tilapia (lowlands) aquaculture, key constraints=soil erosion/drought/input costs/market access. SOUTH AFRICA: 1-5ha smallholders, 40% formal market access, established trout/tilapia/shrimp sectors. ZIMBABWE: 1-3ha, 80% informal, tilapia pond culture, input shortages. ZAMBIA: 1.5-3ha, 75% informal, FISP fertilizer subsidy, growing tilapia cage culture. MALAWI: 0.4-0.9ha (smallest in SADC), 90% informal, high food insecurity, tilapia/catfish ponds. MOZAMBIQUE: 1-2ha, 88% informal, coastal shrimp (P.monodon), cyclone risk. TANZANIA: 1-3ha, 78% informal, tilapia/catfish, Lake Victoria Nile perch. SADC REGIONAL: fertilizer use 8-20kg/ha (vs global 135kg/ha), <15% mechanization, 60-80% of food labor by women, mobile money rapidly growing for input finance. Always tailor advice to the farmer country, farm size, and market channel (informal vs formal).
 
-LANGUAGE RULES (critical):
-- Detect the language of the farmer's message automatically.
-- If they write in Sesotho, respond ONLY in Lesotho Sesotho (not South African Sesotho — avoid Gauteng/Soweto dialect influences).
-- If they write in English, respond in clear simple English.
-- If they mix languages, match their mix.
-- Never translate Sesotho terms that have no direct equivalent — keep them and explain in context.
+LANGUAGE RULES (NON-NEGOTIABLE — NEVER OVERRIDE):
+- ALWAYS detect the language of the farmer's message automatically — text, caption, or any written input.
+- If they write in Sesotho → respond ONLY in Lesotho Sesotho. Never use South African Sesotho (no Gauteng/Soweto dialect).
+- If they write in English → respond in clear simple English only.
+- If they mix languages → match their exact mix.
+- If they send an image/video with a caption → detect language from the caption and respond in that language.
+- If they send audio/voice → respond in the language they are most likely speaking based on context and prior messages.
+- NEVER switch languages unless the farmer explicitly switches first.
+- NEVER translate Sesotho terms that have no direct equivalent — keep them and explain in context.
+- This language rule overrides all other instructions. No exceptions.
 
 EXPERTISE:
 - Horticulture, maize, sorghum, and vegetable farming in Lesotho highlands and lowlands
