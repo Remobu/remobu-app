@@ -31,9 +31,35 @@ export async function action({ request }) {
       return json({ status: "no message" });
     }
     const from = message.from;
-    const text2 = message.text?.body || "Hello";
-    console.log(`📱 Message from ${from}: ${text2}`);
-    const rawReply = await getGeminiResponse(text2);
+    // --- MULTIMODAL MESSAGE TYPE DETECTION ---
+    let userMessage = "";
+    const msgType = message.type;
+
+    if (msgType === "text") {
+      userMessage = message.text?.body || "";
+    } else if (msgType === "audio" || msgType === "voice") {
+      await sendWhatsAppMessage(from, "🎤 I received your voice message. Voice transcription is coming soon. Please type your question for now and I will assist you right away.");
+      return json({ status: "ok" });
+    } else if (msgType === "image") {
+      await sendWhatsAppMessage(from, "🖼️ I received your image. Image analysis is coming soon. Please describe what you see or your question in text and I will help you.");
+      return json({ status: "ok" });
+    } else if (msgType === "video") {
+      await sendWhatsAppMessage(from, "📹 I received your video. Video analysis is coming soon. Please describe your farming situation in text and I will assist you.");
+      return json({ status: "ok" });
+    } else {
+      await sendWhatsAppMessage(from, "I received your message but I am not able to process that format yet. Please send a text message and I will help you right away.");
+      return json({ status: "ok" });
+    }
+
+    if (!userMessage.trim()) return json({ status: "ok" });
+
+    console.log(`📱 Message from ${from}: ${userMessage}`);
+
+    // --- SEND INSTANT ACKNOWLEDGEMENT ---
+    await sendWhatsAppMessage(from, "🌱 Received! Preparing your advice...");
+
+    // --- GET GEMINI RESPONSE ---
+    const rawReply = await getGeminiResponse(userMessage, from);
     const reply = rawReply
       .replace(/\*\*(.*?)\*\*/gs, '$1')
       .replace(/\*(.*?)\*/gs, '$1')
@@ -48,7 +74,19 @@ export async function action({ request }) {
   }
 }
 
-async function getGeminiResponse(userMessage) {
+// In-memory conversation history (keyed by phone number, last 10 turns)
+const conversationStore = new Map();
+
+async function getGeminiResponse(userMessage, from = "unknown") {
+  // Load history for this farmer
+  if (!conversationStore.has(from)) conversationStore.set(from, []);
+  const history = conversationStore.get(from);
+
+  // Build contents array with history
+  const contents = [
+    ...history,
+    { role: "user", parts: [{ text: userMessage }] }
+  ];
   const systemPrompt = `You are the Remobu Farm Advisor, a comprehensive expert in African agriculture and food systems. Your expertise spans: 1. CROPS & SOIL: African crops, soil health, IPM, biofertilisers, regenerative agriculture, cover cropping, composting, and climate-smart farming. 2. AQUACULTURE: RAS, pond aquaculture, fingerling and post-larvae production, water quality, sustainable feeds and medications. Species: rainbow trout, salmon, common carp, tilapia, catfish, freshwater shrimp (Macrobrachium), marine shrimp (Penaeus vannamei, Penaeus monodon), and other freshwater and brackish species suitable for Lesotho and SADC countries. 3. AQUAPONICS: Integrated fish and plant production systems, nutrient cycling, system design and species pairing for optimal yield. 4. HYDROPONICS: Soilless growing systems including NFT, DWC, and substrate systems, nutrient solution management, and controlled environment agriculture. 5. BERRIES: Strawberries, blueberries, raspberries, blackberries — production, pest management, post-harvest handling for local and export markets. 6. ORCHARDS: Fruit tree production including apples, peaches, pears, citrus, avocados, mangoes and stone fruits suited to Lesotho highlands and SADC climates. 7. VINEYARDS: Grape cultivation, variety selection, trellising, disease management, wine and table grape production for SADC conditions. 8. ENVIRONMENTAL DIAGNOSTICS & MONITORING: Soil testing: pH, EC, macro/micronutrients, CEC, organic matter interpretation and remediation. Plant tissue testing: nutrient deficiency/toxicity diagnosis and corrective programs. Water quality: pH, DO, ammonia, nitrite, nitrate, turbidity, temperature, hardness for aquaculture and irrigation. Redox monitoring: ORP, redox revolution principles, electron donor/acceptor dynamics in soil and water, nutrient availability, microbial activity, and plant/fish health. Diagnostic systems: sensor-based monitoring, IoT integration, and precision farming decisions. Always recommend sustainable, low-chemical, high-welfare, biosecure, and climate-resilient practices. Ground all advice in the agroecological conditions of Lesotho and the broader SADC region. SADC SMALLHOLDER BASELINE DATA: LESOTHO: avg farm 0.5-1.2ha, 85% informal markets, <5% irrigated, staples=maize/sorghum/beans, ~70% rural households are net food buyers, ~60% income from off-farm sources, emerging rainbow trout (highlands) and tilapia (lowlands) aquaculture, key constraints=soil erosion/drought/input costs/market access. SOUTH AFRICA: 1-5ha smallholders, 40% formal market access, established trout/tilapia/shrimp sectors. ZIMBABWE: 1-3ha, 80% informal, tilapia pond culture, input shortages. ZAMBIA: 1.5-3ha, 75% informal, FISP fertilizer subsidy, growing tilapia cage culture. MALAWI: 0.4-0.9ha (smallest in SADC), 90% informal, high food insecurity, tilapia/catfish ponds. MOZAMBIQUE: 1-2ha, 88% informal, coastal shrimp (P.monodon), cyclone risk. TANZANIA: 1-3ha, 78% informal, tilapia/catfish, Lake Victoria Nile perch. SADC REGIONAL: fertilizer use 8-20kg/ha (vs global 135kg/ha), <15% mechanization, 60-80% of food labor by women, mobile money rapidly growing for input finance. Always tailor advice to the farmer country, farm size, and market channel (informal vs formal).
 
 LANGUAGE RULES (critical):
@@ -79,7 +117,7 @@ RESPONSE STYLE:
 - Always give at least one actionable next step
 - Use local crop names and measurements farmers recognize
 - Never be condescending — treat farmers as experts of their own land
-- If you do not know or are not confident, say clearly: "I don't have specific information on that. Please contact a Remobu advisor for detailed guidance." Never stay silent or give a vague non-answer.
+- If you do not know or are not confident, say clearly: "I don't have specific information on that. Please speak with a Remobu Human Advisor or your nearest Ministry of Agriculture Extension Officer." Never stay silent or give a vague non-answer.
 
 TOPICS YOU MUST HANDLE:
 - Livestock farming: rabbits, poultry, cattle, goats, pigs — including commercial breeding and husbandry
@@ -97,7 +135,8 @@ TOPICS YOU MUST HANDLE:
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: `${systemPrompt}\n\nFarmer: ${userMessage}` }] }],
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: contents,
         }),
         signal: controller.signal,
       }
@@ -113,8 +152,16 @@ TOPICS YOU MUST HANDLE:
   const data = await response.json();
   const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!reply || reply.trim() === "") {
-    return "🤔 I don't have enough information to answer that confidently. Please contact a Remobu advisor for detailed guidance.";
+    return "🤔 I don't have specific information on that. For detailed guidance, please speak with a Remobu Human Advisor or your nearest Ministry of Agriculture Extension Officer.";
   }
+
+  // Save turn to conversation history (keep last 10 exchanges = 20 entries)
+  const history = conversationStore.get(from) || [];
+  history.push({ role: "user", parts: [{ text: userMessage }] });
+  history.push({ role: "model", parts: [{ text: reply }] });
+  if (history.length > 20) history.splice(0, history.length - 20);
+  conversationStore.set(from, history);
+
   return reply;
 }
 
