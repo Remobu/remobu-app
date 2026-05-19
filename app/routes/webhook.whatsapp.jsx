@@ -55,8 +55,19 @@ export async function action({ request }) {
 
     console.log(`📱 Message from ${from}: ${userMessage}`);
 
+    // Editor-in-Chief override
+    if (from === "26663475043") {
+      const overrides = global.editorInstructions || [];
+      overrides.push(userMessage);
+      if (overrides.length > 20) overrides.splice(0, overrides.length - 20);
+      global.editorInstructions = overrides;
+      await sendLogoMessage(from, "✅ Instruction received and applied to all farmer responses.");
+      return json({ status: "ok" });
+    }
+
+
     // --- SEND INSTANT ACKNOWLEDGEMENT ---
-    await sendWhatsAppMessage(from, "🌱 Received! Preparing your advice...");
+    await sendLogoMessage(from, "⏳ Received! Preparing your advice...");
 
     // --- GET GEMINI RESPONSE ---
     const rawReply = await getGeminiResponse(userMessage, from);
@@ -87,6 +98,10 @@ async function getGeminiResponse(userMessage, from = "unknown") {
     ...history,
     { role: "user", parts: [{ text: userMessage }] }
   ];
+  // Apply Editor-in-Chief overrides
+  const overrides = global.editorInstructions || [];
+  const overrideText = overrides.length > 0 ? "\n\nEDITOR INSTRUCTIONS:\n" + overrides.join("\n") : "";
+
   const systemPrompt = `You are the Remobu Farm Advisor, a comprehensive expert in African agriculture and food systems. Your expertise spans: 1. CROPS & SOIL: African crops, soil health, IPM, biofertilisers, regenerative agriculture, cover cropping, composting, and climate-smart farming. 2. AQUACULTURE: RAS, pond aquaculture, fingerling and post-larvae production, water quality, sustainable feeds and medications. Species: rainbow trout, salmon, common carp, tilapia, catfish, freshwater shrimp (Macrobrachium), marine shrimp (Penaeus vannamei, Penaeus monodon), and other freshwater and brackish species suitable for Lesotho and SADC countries. 3. AQUAPONICS: Integrated fish and plant production systems, nutrient cycling, system design and species pairing for optimal yield. 4. HYDROPONICS: Soilless growing systems including NFT, DWC, and substrate systems, nutrient solution management, and controlled environment agriculture. 5. BERRIES: Strawberries, blueberries, raspberries, blackberries — production, pest management, post-harvest handling for local and export markets. 6. ORCHARDS: Fruit tree production including apples, peaches, pears, citrus, avocados, mangoes and stone fruits suited to Lesotho highlands and SADC climates. 7. VINEYARDS: Grape cultivation, variety selection, trellising, disease management, wine and table grape production for SADC conditions. 8. ENVIRONMENTAL DIAGNOSTICS & MONITORING: Soil testing: pH, EC, macro/micronutrients, CEC, organic matter interpretation and remediation. Plant tissue testing: nutrient deficiency/toxicity diagnosis and corrective programs. Water quality: pH, DO, ammonia, nitrite, nitrate, turbidity, temperature, hardness for aquaculture and irrigation. Redox monitoring: ORP, redox revolution principles, electron donor/acceptor dynamics in soil and water, nutrient availability, microbial activity, and plant/fish health. Diagnostic systems: sensor-based monitoring, IoT integration, and precision farming decisions. Always recommend sustainable, low-chemical, high-welfare, biosecure, and climate-resilient practices. Ground all advice in the agroecological conditions of Lesotho and the broader SADC region. SADC SMALLHOLDER BASELINE DATA: LESOTHO: avg farm 0.5-1.2ha, 85% informal markets, <5% irrigated, staples=maize/sorghum/beans, ~70% rural households are net food buyers, ~60% income from off-farm sources, emerging rainbow trout (highlands) and tilapia (lowlands) aquaculture, key constraints=soil erosion/drought/input costs/market access. SOUTH AFRICA: 1-5ha smallholders, 40% formal market access, established trout/tilapia/shrimp sectors. ZIMBABWE: 1-3ha, 80% informal, tilapia pond culture, input shortages. ZAMBIA: 1.5-3ha, 75% informal, FISP fertilizer subsidy, growing tilapia cage culture. MALAWI: 0.4-0.9ha (smallest in SADC), 90% informal, high food insecurity, tilapia/catfish ponds. MOZAMBIQUE: 1-2ha, 88% informal, coastal shrimp (P.monodon), cyclone risk. TANZANIA: 1-3ha, 78% informal, tilapia/catfish, Lake Victoria Nile perch. SADC REGIONAL: fertilizer use 8-20kg/ha (vs global 135kg/ha), <15% mechanization, 60-80% of food labor by women, mobile money rapidly growing for input finance. Always tailor advice to the farmer country, farm size, and market channel (informal vs formal).
 
 LANGUAGE RULES (critical):
@@ -124,7 +139,7 @@ TOPICS YOU MUST HANDLE:
 - Agro-processing and value-added products: biltong, dried meats, dairy, packaging, food safety
 - Agricultural business models tailored for Lesotho and SADC markets
 - Export opportunities: AfCFTA, AGOA, SADC trade protocols, South Africa as regional hub
-- Market linkages, pricing strategy, and off-taker identification`;
+- Market linkages, pricing strategy, and off-taker identification${overrideText}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 20000);
   let response;
@@ -163,6 +178,49 @@ TOPICS YOU MUST HANDLE:
   conversationStore.set(from, updatedHistory);
 
   return reply;
+}
+
+async function sendLogoMessage(to, caption) {
+  const url = `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const body = {
+    messaging_product: "whatsapp",
+    to,
+    type: "image",
+    image: {
+      link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/REMOBU_-logo_b577d7c2-27f0-4899-ab98-83606d84d7ca_450x.png?v=1779216809",
+      caption: caption || ""
+    }
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  const result = await res.json();
+  console.log("📤 Logo send result:", JSON.stringify(result));
+}
+
+async function sendLogoMessage(to, caption) {
+  const url = `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  const body = {
+    messaging_product: "whatsapp",
+    to,
+    type: "image",
+    image: { link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/REMOBU_-logo_b577d7c2-27f0-4899-ab98-83606d84d7ca_450x.png?v=1779216809", caption: caption || "" }
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  const result = await res.json();
+  console.log("📤 Logo send result:", JSON.stringify(result));
 }
 
 async function sendWhatsAppMessage(to, message) {
