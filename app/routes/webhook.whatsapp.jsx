@@ -64,7 +64,7 @@ export async function action({ request }) {
       overrides.push(userMessage);
       if (overrides.length > 20) overrides.splice(0, overrides.length - 20);
       global.editorInstructions = overrides;
-      await sendLogoMessage(from, "✅ Instruction received and applied to all farmer responses.");
+      await sendWhatsAppMessage(from, "🌿 *REMOBU Farm Advisor*\n✅ Instruction received and applied to all farmer responses.");
       return json({ status: "ok" });
     }
 
@@ -80,7 +80,14 @@ export async function action({ request }) {
       .replace(/#{1,6}\s?/g, '')
       .replace(/`{1,3}/g, '')
       .trim();
-    await sendWhatsAppMessage(from, reply);
+    // Logo on first message only per session
+    if (!global.seenFarmers) global.seenFarmers = new Set();
+    if (!global.seenFarmers.has(from)) {
+      global.seenFarmers.add(from);
+      await sendLogoMessage(from, reply);
+    } else {
+      await sendWhatsAppMessage(from, reply);
+    }
     return json({ status: "ok" });
   } catch (err) {
     console.error("❌ Webhook error:", err.message);
