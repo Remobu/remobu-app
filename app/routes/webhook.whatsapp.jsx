@@ -156,11 +156,11 @@ TOPICS YOU MUST HANDLE:
   }
 
   // Save turn to conversation history (keep last 10 exchanges = 20 entries)
-  const history = conversationStore.get(from) || [];
-  history.push({ role: "user", parts: [{ text: userMessage }] });
-  history.push({ role: "model", parts: [{ text: reply }] });
-  if (history.length > 20) history.splice(0, history.length - 20);
-  conversationStore.set(from, history);
+  const updatedHistory = conversationStore.get(from) || [];
+  updatedHistory.push({ role: "user", parts: [{ text: userMessage }] });
+  updatedHistory.push({ role: "model", parts: [{ text: reply }] });
+  if (updatedHistory.length > 20) updatedHistory.splice(0, updatedHistory.length - 20);
+  conversationStore.set(from, updatedHistory);
 
   return reply;
 }
