@@ -203,25 +203,6 @@ async function sendLogoMessage(to, caption) {
   console.log("📤 Logo send result:", JSON.stringify(result));
 }
 
-async function sendLogoMessage(to, caption) {
-  const url = `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
-  const body = {
-    messaging_product: "whatsapp",
-    to,
-    type: "image",
-    image: { link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/REMOBU_-logo_b577d7c2-27f0-4899-ab98-83606d84d7ca_450x.png?v=1779216809", caption: caption || "" }
-  };
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
-  const result = await res.json();
-  console.log("📤 Logo send result:", JSON.stringify(result));
-}
 
 async function sendWhatsAppMessage(to, message) {
   const MAX_LENGTH = 4000;
