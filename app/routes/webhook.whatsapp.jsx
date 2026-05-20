@@ -84,7 +84,12 @@ export async function action({ request }) {
     if (!global.seenFarmers) global.seenFarmers = new Set();
     if (!global.seenFarmers.has(from)) {
       global.seenFarmers.add(from);
-      await sendLogoMessage(from, reply);
+      try {
+        await sendLogoMessage(from, reply);
+      } catch (logoErr) {
+        console.error("❌ Logo send failed:", logoErr.message);
+        await sendWhatsAppMessage(from, reply);
+      }
     } else {
       await sendWhatsAppMessage(from, reply);
     }
