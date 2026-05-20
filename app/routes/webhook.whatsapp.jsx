@@ -93,7 +93,7 @@ export async function action({ request }) {
             messaging_product: "whatsapp",
             to: from,
             type: "sticker",
-            sticker: { link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/REMOBU_-logo.webp?v=1779306875" }
+            sticker: { id: "1292357385878434" }
           })
         }).then(r => r.json()).then(d => console.log("📤 Sticker send result:", JSON.stringify(d)));
       } catch (stickerErr) {
