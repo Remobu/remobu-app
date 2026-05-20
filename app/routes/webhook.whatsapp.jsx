@@ -84,11 +84,20 @@ export async function action({ request }) {
     if (!global.seenFarmers) global.seenFarmers = new Set();
     if (!global.seenFarmers.has(from)) {
       global.seenFarmers.add(from);
+      await sendWhatsAppMessage(from, reply);
       try {
-        await sendLogoMessage(from, reply);
-      } catch (logoErr) {
-        console.error("❌ Logo send failed:", logoErr.message);
-        await sendWhatsAppMessage(from, reply);
+        await fetch(`https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${process.env.WHATSAPP_TOKEN}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: from,
+            type: "sticker",
+            sticker: { link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/REMOBU_-logo.webp?v=1779306875" }
+          })
+        }).then(r => r.json()).then(d => console.log("📤 Sticker send result:", JSON.stringify(d)));
+      } catch (stickerErr) {
+        console.error("❌ Sticker send failed:", stickerErr.message);
       }
     } else {
       await sendWhatsAppMessage(from, reply);
