@@ -84,7 +84,8 @@ export async function action({ request }) {
     if (!global.seenFarmers) global.seenFarmers = new Set();
     if (!global.seenFarmers.has(from)) {
       global.seenFarmers.add(from);
-      const brandedReply = !global.seenFarmers.has(from)
+      const isGreeting = /^(hi|hello|hie|sawubona|lumela|hey)$/i.test(userMessage.trim());
+      const brandedReply = (isGreeting || !global.seenFarmers.has(from))
         ? `🌿 *REMOBU Farm Advisor*\n━━━━━━━━━━━━━━━━━━\n${reply}`
         : reply;
       await sendWhatsAppMessage(from, brandedReply);
