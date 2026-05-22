@@ -129,12 +129,20 @@ async function getGeminiResponse(userMessage, from = "unknown") {
 
   // Build contents array with history
 
-  // Fetch last 10 messages for this farmer
-  const recentMessages = await prisma.conversation.findMany({
-    where: { phone: from },
-    orderBy: { createdAt: 'desc' },
-    take: 10,
-  });
+  // Fetch last 10 messages for this farmer (with timeout)
+  let recentMessages = [];
+  try {
+    recentMessages = await Promise.race([
+      prisma.conversation.findMany({
+        where: { phone: from },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), 3000))
+    ]);
+  } catch (e) {
+    console.warn("⚠️ Memory fetch skipped:", e.message);
+  }
   history = recentMessages.reverse().map(m => ({
     role: m.role === 'user' ? 'user' : 'model',
     parts: [{ text: m.message }]
