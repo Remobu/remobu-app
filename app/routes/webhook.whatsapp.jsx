@@ -210,6 +210,7 @@ ${agriContext}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 20000);
   let response;
+  console.log("🤖 Calling Gemini API...");
   try {
     response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
