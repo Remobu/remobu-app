@@ -104,7 +104,9 @@ export async function action({ request }) {
         ? `🌿 *REMOBU Farm Advisor*\n━━━━━━━━━━━━━━━━━━\n${reply}`
         : reply;
 
-  // Memory save disabled for stability (in-memory store used instead)
+  // Save to DB fire-and-forget (non-blocking)
+  prisma.conversation.create({ data: { phone: from, role: 'user', message: userMessage } }).catch(e => console.warn("⚠️ Memory save failed:", e.message));
+  prisma.conversation.create({ data: { phone: from, role: 'assistant', message: brandedReply } }).catch(e => console.warn("⚠️ Memory save failed:", e.message));
 
       await sendWhatsAppMessage(from, brandedReply);
     } else {
@@ -127,8 +129,20 @@ async function getGeminiResponse(userMessage, from = "unknown") {
 
   // Build contents array with history
 
-  // Use in-memory conversation store (Prisma memory disabled for stability)
+  // Fetch conversation history (non-blocking, falls back to empty)
   let recentMessages = [];
+  try {
+    recentMessages = await Promise.race([
+      prisma.conversation.findMany({
+        where: { phone: from },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), 2000))
+    ]);
+  } catch (e) {
+    console.warn("⚠️ Memory fetch skipped:", e.message);
+  }
   history = recentMessages.reverse().map(m => ({
     role: m.role === 'user' ? 'user' : 'model',
     parts: [{ text: m.message }]
