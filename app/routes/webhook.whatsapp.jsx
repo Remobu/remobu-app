@@ -104,9 +104,7 @@ export async function action({ request }) {
         ? `🌿 *REMOBU Farm Advisor*\n━━━━━━━━━━━━━━━━━━\n${reply}`
         : reply;
 
-  // Save conversation to memory
-  await prisma.conversation.create({ data: { phone: from, role: 'user', message: userMessage } });
-  await prisma.conversation.create({ data: { phone: from, role: 'assistant', message: brandedReply } });
+  // Memory save disabled for stability (in-memory store used instead)
 
       await sendWhatsAppMessage(from, brandedReply);
     } else {
