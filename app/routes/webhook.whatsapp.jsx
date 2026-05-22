@@ -1,6 +1,9 @@
 export const config = { unstable_middleware: false };
 
 import { json } from "@remix-run/node";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 const VERIFY_TOKEN = (process.env.WEBHOOK_VERIFY_TOKEN || "").trim();
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
@@ -120,12 +123,12 @@ async function getGeminiResponse(userMessage, from = "unknown") {
     orderBy: { createdAt: 'desc' },
     take: 10,
   });
-  const history = recentMessages.reverse().map(m => ({
+  history = recentMessages.reverse().map(m => ({
     role: m.role === 'user' ? 'user' : 'model',
     parts: [{ text: m.message }]
   }));
 
-  const contents = [...history,
+  const contents = [
 
     ...history,
     { role: "user", parts: [{ text: userMessage }] }
