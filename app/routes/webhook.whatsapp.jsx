@@ -408,7 +408,6 @@ async function sendLogoMessage(to, caption) {
 }
 
 
-}
 
 async function sendWhatsAppMessage(to, message) {
   const MAX_LENGTH = 4000;
