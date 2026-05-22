@@ -21,19 +21,23 @@ export async function loader({ request }) {
   return new Response("Forbidden", { status: 403 });
 }
 
-export async function action({ request }) {
-  // Return 200 immediately to prevent WhatsApp retries
-  const body = await request.json().catch(() => ({}));
-  processWebhook(body).catch(console.error);
-  return json({ status: "ok" }, { status: 200 });
-}
+const processedMessages = new Set();
 
-async function processWebhook(body) {
-  const request = { json: async () => body };
+export async function action({ request }) {
   try {
     const text = await request.text();
     console.log("📨 Raw webhook body:", text);
     const body = JSON.parse(text);
+
+    // Deduplicate WhatsApp retries using message ID
+    const msgId = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id;
+    if (msgId) {
+      if (processedMessages.has(msgId)) {
+        return json({ status: "duplicate" }, { status: 200 });
+      }
+      processedMessages.add(msgId);
+      setTimeout(() => processedMessages.delete(msgId), 60000);
+    }
     const entry = body.entry?.[0];
     const change = entry?.changes?.[0];
     const message = change?.value?.messages?.[0];
