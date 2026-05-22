@@ -22,6 +22,14 @@ export async function loader({ request }) {
 }
 
 export async function action({ request }) {
+  // Return 200 immediately to prevent WhatsApp retries
+  const body = await request.json().catch(() => ({}));
+  processWebhook(body).catch(console.error);
+  return json({ status: "ok" }, { status: 200 });
+}
+
+async function processWebhook(body) {
+  const request = { json: async () => body };
   try {
     const text = await request.text();
     console.log("📨 Raw webhook body:", text);
@@ -399,6 +407,8 @@ async function sendLogoMessage(to, caption) {
   console.log("📤 Logo send result:", JSON.stringify(result));
 }
 
+
+}
 
 async function sendWhatsAppMessage(to, message) {
   const MAX_LENGTH = 4000;
