@@ -25,7 +25,7 @@ const processedMessages = new Set();
 
 export async function action({ request }) {
   try {
-    const text = await request.text();
+    let text = await request.text();
     console.log("📨 Raw webhook body:", text);
     const body = JSON.parse(text);
 
@@ -123,7 +123,7 @@ const conversationStore = new Map();
 async function getGeminiResponse(userMessage, from = "unknown") {
   // Load history for this farmer
   if (!conversationStore.has(from)) conversationStore.set(from, []);
-  const history = conversationStore.get(from);
+  let history = conversationStore.get(from);
 
   // Build contents array with history
 
