@@ -205,3 +205,13 @@ model Transaction {
   status         String   @default("COMPLETED")
   createdAt      DateTime @default(now())
 }
+
+model Conversation {
+  id        String   @id @default(cuid())
+  phone     String
+  role      String   // "user" or "assistant"
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+}

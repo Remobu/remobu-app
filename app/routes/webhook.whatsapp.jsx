@@ -88,6 +88,11 @@ export async function action({ request }) {
       const brandedReply = (isGreeting || !global.seenFarmers.has(from))
         ? `🌿 *REMOBU Farm Advisor*\n━━━━━━━━━━━━━━━━━━\n${reply}`
         : reply;
+
+  // Save conversation to memory
+  await prisma.conversation.create({ data: { phone: from, role: 'user', message: userMessage } });
+  await prisma.conversation.create({ data: { phone: from, role: 'assistant', message: brandedReply } });
+
       await sendWhatsAppMessage(from, brandedReply);
     } else {
       await sendWhatsAppMessage(from, reply);
@@ -108,7 +113,20 @@ async function getGeminiResponse(userMessage, from = "unknown") {
   const history = conversationStore.get(from);
 
   // Build contents array with history
-  const contents = [
+
+  // Fetch last 10 messages for this farmer
+  const recentMessages = await prisma.conversation.findMany({
+    where: { phone: from },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  });
+  const history = recentMessages.reverse().map(m => ({
+    role: m.role === 'user' ? 'user' : 'model',
+    parts: [{ text: m.message }]
+  }));
+
+  const contents = [...history,
+
     ...history,
     { role: "user", parts: [{ text: userMessage }] }
   ];
