@@ -236,3 +236,53 @@ async function sendWhatsAppMessage(to, message) {
     console.log("📤 WhatsApp send result:", JSON.stringify(result));
   }
 }
+
+// Remix loader - handles GET (WhatsApp webhook verification)
+export async function loader({ request }) {
+  const url = new URL(request.url);
+  const mode = url.searchParams.get("hub.mode");
+  const token = url.searchParams.get("hub.verify_token");
+  const challenge = url.searchParams.get("hub.challenge");
+  if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    return new Response(challenge, { status: 200 });
+  }
+  return new Response("Forbidden", { status: 403 });
+}
+
+// Remix action - handles POST (incoming WhatsApp messages)
+export async function action({ request }) {
+  try {
+    const body = await request.json();
+    const entry = body?.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const value = changes?.value;
+    const messages = value?.messages;
+    if (!messages || messages.length === 0) {
+      return json({ status: "no_message" }, { status: 200 });
+    }
+    const msg = messages[0];
+    const from = msg.from;
+    const msgId = msg.id;
+    if (processedMessages.has(msgId)) {
+      return json({ status: "duplicate" }, { status: 200 });
+    }
+    processedMessages.add(msgId);
+    let userMessage = "";
+    if (msg.type === "text") {
+      userMessage = msg.text?.body || "";
+    } else if (msg.type === "audio") {
+      await sendWhatsAppMessage(from, "🎤 I received your voice message. Voice transcription is coming soon. Please type your question for now and I will assist you right away.");
+      return json({ status: "ok" }, { status: 200 });
+    } else {
+      return json({ status: "unsupported_type" }, { status: 200 });
+    }
+    // Respond immediately, process async
+    getGeminiResponse(userMessage, from)
+      .then(reply => sendWhatsAppMessage(from, reply))
+      .catch(e => console.error("❌ Handler error:", e.message));
+    return json({ status: "ok" }, { status: 200 });
+  } catch (e) {
+    console.error("❌ Webhook error:", e.message);
+    return json({ status: "error" }, { status: 200 });
+  }
+}
