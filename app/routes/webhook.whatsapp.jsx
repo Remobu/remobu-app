@@ -8,14 +8,18 @@ const prisma = new PrismaClient();
 // RAG: Find most relevant agri Q&A pairs for a query
 async function getRelevantContext(query, apiKey) {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: { parts: [{ text: query }] } })
+        body: JSON.stringify({ content: { parts: [{ text: query }] } }),
+        signal: controller.signal
       }
     );
+    clearTimeout(timeout);
     const data = await res.json();
     if (!data.embedding) return '';
     const vec = `[${data.embedding.values.join(',')}]`;
