@@ -19,12 +19,9 @@ async function getRelevantContext(query, apiKey) {
     const data = await res.json();
     if (!data.embedding) return '';
     const vec = `[${data.embedding.values.join(',')}]`;
-    const results = await prisma.$queryRaw`
-      SELECT question, answer
-      FROM "AgriEmbedding"
-      ORDER BY embedding <-> ${vec}::vector
-      LIMIT 5
-    `;
+    const results = await prisma.$queryRawUnsafe(
+      `SELECT question, answer FROM "AgriEmbedding" ORDER BY embedding <-> '${vec}'::vector LIMIT 5`
+    );
     return results.map(r => `Q: ${r.question}\nA: ${r.answer}`).join('\n\n');
   } catch (e) {
     console.warn('⚠️ RAG failed:', e.message);
