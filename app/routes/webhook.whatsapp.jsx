@@ -4,6 +4,7 @@ import { json } from "@remix-run/node";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const conversationStore = new Map();
 const processedMessages = new Set();
 
