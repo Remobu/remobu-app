@@ -189,8 +189,8 @@ async function sendLogoMessage(to, caption) {
   const body = {
     messaging_product: "whatsapp",
     to,
-    type: "image",
-    image: {
+    type: "sticker",
+    sticker: {
       link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/Remobu_Logo.jpg?v=1778694454",
       caption: caption || ""
     }
@@ -287,7 +287,7 @@ export async function action({ request }) {
         // Strip markdown asterisks for WhatsApp plain text
         const clean = reply.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
         await sendLogoMessage(from, "Remobu Farm Advisor");
-        await sendWhatsAppMessage(from, "Remobu Farm Advisor\n\n" + clean);
+        await sendWhatsAppMessage(from, clean);
       })
       .catch(e => console.error("❌ Handler error:", e.message));
     return json({ status: "ok" }, { status: 200 });
