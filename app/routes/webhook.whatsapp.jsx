@@ -4,6 +4,8 @@ import { json } from "@remix-run/node";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+const conversationStore = new Map();
+const processedMessages = new Set();
 
 // RAG: Find most relevant agri Q&A pairs for a query
 async function getRelevantContext(query, apiKey) {
