@@ -191,7 +191,7 @@ async function sendLogoMessage(to, caption) {
     to,
     type: "image",
     image: {
-      link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/REMOBU_-logo_b577d7c2-27f0-4899-ab98-83606d84d7ca_450x.png?v=1779216809",
+      link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/Remobu_Logo.jpg?v=1778694454",
       caption: caption || ""
     }
   };
