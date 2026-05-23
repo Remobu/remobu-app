@@ -283,7 +283,12 @@ export async function action({ request }) {
     }
     // Respond immediately, process async
     getGeminiResponse(userMessage, from)
-      .then(reply => sendWhatsAppMessage(from, reply))
+      .then(async reply => {
+        // Strip markdown asterisks for WhatsApp plain text
+        const clean = reply.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+        await sendLogoMessage(from, "🌱 *Remobu Advisor*");
+        await sendWhatsAppMessage(from, clean);
+      })
       .catch(e => console.error("❌ Handler error:", e.message));
     return json({ status: "ok" }, { status: 200 });
   } catch (e) {
