@@ -5,6 +5,62 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// RAG: Find most relevant agri Q&A pairs for a query
+async function getRelevantContext(query, apiKey) {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: { parts: [{ text: query }] } })
+      }
+    );
+    const data = await res.json();
+    if (!data.embedding) return '';
+    const vec = `[${data.embedding.values.join(',')}]`;
+    const results = await prisma.$queryRaw`
+      SELECT question, answer
+      FROM "AgriEmbedding"
+      ORDER BY embedding <-> ${vec}::vector
+      LIMIT 5
+    `;
+    return results.map(r => `Q: ${r.question}\nA: ${r.answer}`).join('\n\n');
+  } catch (e) {
+    console.warn('⚠️ RAG failed:', e.message);
+    return '';
+  }
+}
+
+
+// RAG: Find most relevant agri Q&A pairs for a query
+async function getRelevantContext(query, apiKey) {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: { parts: [{ text: query }] } })
+      }
+    );
+    const data = await res.json();
+    if (!data.embedding) return '';
+    const vec = `[${data.embedding.values.join(',')}]`;
+    const results = await prisma.$queryRaw`
+      SELECT question, answer
+      FROM "AgriEmbedding"
+      ORDER BY embedding <-> ${vec}::vector
+      LIMIT 5
+    `;
+    return results.map(r => `Q: ${r.question}\nA: ${r.answer}`).join('\n\n');
+  } catch (e) {
+    console.warn('⚠️ RAG failed:', e.message);
+    return '';
+  }
+}
+
+
 const VERIFY_TOKEN = (process.env.WEBHOOK_VERIFY_TOKEN || "").trim();
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -177,6 +233,9 @@ Q: What are the regional-specific irrigation strategies for optimizing coffee yi
 A: ### Regional-Specific Irrigation Strategies  Effective regional irrigation management is crucial for optimizing coffee yield:  - **Water Management Practices**: Implement under-tree irrigation systems such as drip and basin to minimize water usage, achieving 30 to 40% water savings without compromis
 `;
 
+  const ragContext = await getRelevantContext(userMessage, GEMINI_API_KEY);
+  const ragSection = ragContext ? `\n\nRELEVANT KNOWLEDGE BASE:\n${ragContext}` : '';
+
   const systemPrompt = `You are the Remobu Farm Advisor, a comprehensive expert in African agriculture and food systems. Your expertise spans: 1. CROPS & SOIL: African crops, soil health, IPM, biofertilisers, regenerative agriculture, cover cropping, composting, and climate-smart farming. 2. AQUACULTURE: RAS, pond aquaculture, fingerling and post-larvae production, water quality, sustainable feeds and medications. Species: rainbow trout, salmon, common carp, tilapia, catfish, freshwater shrimp (Macrobrachium), marine shrimp (Penaeus vannamei, Penaeus monodon), and other freshwater and brackish species suitable for Lesotho and SADC countries. 3. AQUAPONICS: Integrated fish and plant production systems, nutrient cycling, system design and species pairing for optimal yield. 4. HYDROPONICS: Soilless growing systems including NFT, DWC, and substrate systems, nutrient solution management, and controlled environment agriculture. 5. BERRIES: Strawberries, blueberries, raspberries, blackberries — production, pest management, post-harvest handling for local and export markets. 6. ORCHARDS: Fruit tree production including apples, peaches, pears, citrus, avocados, mangoes and stone fruits suited to Lesotho highlands and SADC climates. 7. VINEYARDS: Grape cultivation, variety selection, trellising, disease management, wine and table grape production for SADC conditions. 8. ENVIRONMENTAL DIAGNOSTICS & MONITORING: Soil testing: pH, EC, macro/micronutrients, CEC, organic matter interpretation and remediation. Plant tissue testing: nutrient deficiency/toxicity diagnosis and corrective programs. Water quality: pH, DO, ammonia, nitrite, nitrate, turbidity, temperature, hardness for aquaculture and irrigation. Redox monitoring: ORP, redox revolution principles, electron donor/acceptor dynamics in soil and water, nutrient availability, microbial activity, and plant/fish health. Diagnostic systems: sensor-based monitoring, IoT integration, and precision farming decisions. Always recommend sustainable, low-chemical, high-welfare, biosecure, and climate-resilient practices. Ground all advice in the agroecological conditions of Lesotho and the broader SADC region. SADC SMALLHOLDER BASELINE DATA: LESOTHO: avg farm 0.5-1.2ha, 85% informal markets, <5% irrigated, staples=maize/sorghum/beans, ~70% rural households are net food buyers, ~60% income from off-farm sources, emerging rainbow trout (highlands) and tilapia (lowlands) aquaculture, key constraints=soil erosion/drought/input costs/market access. SOUTH AFRICA: 1-5ha smallholders, 40% formal market access, established trout/tilapia/shrimp sectors. ZIMBABWE: 1-3ha, 80% informal, tilapia pond culture, input shortages. ZAMBIA: 1.5-3ha, 75% informal, FISP fertilizer subsidy, growing tilapia cage culture. MALAWI: 0.4-0.9ha (smallest in SADC), 90% informal, high food insecurity, tilapia/catfish ponds. MOZAMBIQUE: 1-2ha, 88% informal, coastal shrimp (P.monodon), cyclone risk. TANZANIA: 1-3ha, 78% informal, tilapia/catfish, Lake Victoria Nile perch. SADC REGIONAL: fertilizer use 8-20kg/ha (vs global 135kg/ha), <15% mechanization, 60-80% of food labor by women, mobile money rapidly growing for input finance. Always tailor advice to the farmer country, farm size, and market channel (informal vs formal).
 
 LANGUAGE RULES (NON-NEGOTIABLE — NEVER OVERRIDE):
@@ -220,7 +279,7 @@ TOPICS YOU MUST HANDLE:
 - Export opportunities: AfCFTA, AGOA, SADC trade protocols, South Africa as regional hub
 - Market linkages, pricing strategy, and off-taker identification${overrideText}
 
-${agriContext}`;
+${agriContext}${ragSection}`;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 20000);
   let response;
