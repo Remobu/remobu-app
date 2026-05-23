@@ -286,8 +286,8 @@ export async function action({ request }) {
       .then(async reply => {
         // Strip markdown asterisks for WhatsApp plain text
         const clean = reply.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
-        await sendLogoMessage(from, "🌱 *Remobu Advisor*");
-        await sendWhatsAppMessage(from, clean);
+        await sendLogoMessage(from, "Remobu Farm Advisor");
+        await sendWhatsAppMessage(from, "Remobu Farm Advisor\n\n" + clean);
       })
       .catch(e => console.error("❌ Handler error:", e.message));
     return json({ status: "ok" }, { status: 200 });
