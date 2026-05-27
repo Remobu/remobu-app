@@ -215,3 +215,22 @@ model Conversation {
 
   @@index([phone, createdAt])
 }
+
+model AgriEmbedding {
+  id        Int    @id @default(autoincrement())
+  question  String
+  answer    String
+  embedding Unsupported("vector(3072)")
+}
+
+model MpesaPayment {
+  id                 String   @id @default(cuid())
+  checkoutRequestId  String
+  merchantRequestId  String
+  amount             Float
+  mpesaReceiptNumber String
+  phone              String
+  status             String   // SUCCESS | FAILED | PENDING
+  description        String?
+  createdAt          DateTime @default(now())
+}
