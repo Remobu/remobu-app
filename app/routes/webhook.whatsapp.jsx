@@ -284,6 +284,39 @@ export async function action({ request }) {
     // Respond immediately, process async
     getGeminiResponse(userMessage, from)
       .then(async reply => {
+        // M-Pesa payment trigger
+        if (/^(pay|plati|payment|lefso|lefa)/i.test(text?.trim())) {
+          await sendWhatsAppMessage(from, "💳 To make a payment, please reply with:\n\nPAY <amount>\nExample: PAY 50\n\nThis will send an M-Pesa prompt to your phone.");
+          return;
+        }
+        if (/^PAY \d+/i.test(text?.trim())) {
+          const amount = parseFloat(text.trim().split(" ")[1]);
+          try {
+            const res = await fetch(`${process.env.APP_URL}/mpesa`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                phone: from,
+                amount,
+                reference: "REMOBU-" + Date.now(),
+                description: "Remobu Farm Advisor Payment"
+              })
+            });
+            const result = await res.json();
+            if (result.ResponseCode === "0") {
+              await sendWhatsAppMessage(from, "✅ M-Pesa prompt sent to your phone!\n\nEnter your PIN to complete the payment of M" + amount + ".\n\nReply STATUS to check payment status.");
+            } else {
+              await sendWhatsAppMessage(from, "❌ Payment request failed. Please try again or contact support.");
+            }
+          } catch(e) {
+            await sendWhatsAppMessage(from, "❌ Payment service unavailable. Please try again later.");
+          }
+          return;
+        }
+        if (/^STATUS$/i.test(text?.trim())) {
+          await sendWhatsAppMessage(from, "🔍 Checking your latest payment status...\n\nPlease wait a moment and reply STATUS again if needed.");
+          return;
+        }
         // Strip markdown asterisks for WhatsApp plain text
         const clean = reply.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
         await sendLogoMessage(from, "Remobu Farm Advisor");
