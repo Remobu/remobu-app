@@ -234,3 +234,16 @@ model MpesaPayment {
   description        String?
   createdAt          DateTime @default(now())
 }
+
+model AdvisorBilling {
+  id                String   @id @default(cuid())
+  farmerPhone       String
+  advisorId         String
+  sessionId         String
+  amount            Float
+  platformFee       Float
+  advisorPayout     Float
+  checkoutRequestId String
+  status            String
+  createdAt         DateTime @default(now())
+}
