@@ -19,15 +19,19 @@ export async function action({ request }) {
       return json({ error: "Missing farmerPhone, advisorId, or amount" }, { status: 400 });
     }
 
-    // Check free query limit
-    const queryCount = await prisma.mpesaPayment.count({
-      where: { phone: farmerPhone, status: "SUCCESS" }
+    // Check free query limit — enforced independently for farmer AND advisor
+    const farmerQueryCount = await prisma.advisorBilling.count({
+      where: { farmerPhone: farmerPhone.replace(/^\+/, "").replace(/^0/, "266"), status: "SUCCESS" }
     });
-
-    if (queryCount < FREE_QUERY_LIMIT && amount === 0) {
-      return json({ 
+    const advisorQueryCount = await prisma.advisorBilling.count({
+      where: { advisorId, status: "SUCCESS" }
+    });
+    if (farmerQueryCount < FREE_QUERY_LIMIT || advisorQueryCount < FREE_QUERY_LIMIT) {
+      return json({
         status: "FREE_TIER",
-        message: `Farmer has ${FREE_QUERY_LIMIT - queryCount} free queries remaining.`
+        farmerQueriesRemaining: Math.max(0, FREE_QUERY_LIMIT - farmerQueryCount),
+        advisorQueriesRemaining: Math.max(0, FREE_QUERY_LIMIT - advisorQueryCount),
+        message: `Free tier active. Farmer: ${FREE_QUERY_LIMIT - farmerQueryCount} remaining. Advisor: ${FREE_QUERY_LIMIT - advisorQueryCount} remaining.`
       });
     }
 

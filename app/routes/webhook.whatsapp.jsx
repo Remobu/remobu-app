@@ -285,7 +285,7 @@ export async function action({ request }) {
     getGeminiResponse(userMessage, from)
       .then(async reply => {
         // M-Pesa payment trigger
-        if (/^(pay|plati|payment|lefso|lefa)/i.test(text?.trim())) {
+        if (/^(pay|patala|payment|lefso|lefa)/i.test(text?.trim())) {
           await sendWhatsAppMessage(from, "💳 To make a payment, please reply with:\n\nPAY <amount>\nExample: PAY 50\n\nThis will send an M-Pesa prompt to your phone.");
           return;
         }
