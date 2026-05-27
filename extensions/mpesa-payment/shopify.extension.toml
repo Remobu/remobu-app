@@ -1,0 +1,7 @@
+name = "mpesa-payment"
+type = "payment_customization"
+api_version = "2025-01"
+
+[[extensions.targeting]]
+module = "./src/index.js"
+target = "purchase.payment-customization.run"
