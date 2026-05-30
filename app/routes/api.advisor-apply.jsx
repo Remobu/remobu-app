@@ -12,6 +12,7 @@ const SPECIALIZATION_MAP = {
 };
 
 export async function action({ request }) {
+  try {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, { status: 405 });
   const data = await request.json();
   const { name, phone, email, district, specialization, yearsOfExperience, credentials, motivation, billingAgreed, credentialFileUrl } = data;
@@ -33,6 +34,10 @@ export async function action({ request }) {
     body: JSON.stringify({ messaging_product: "whatsapp", to: process.env.ADMIN_PHONE || "26663475043", type: "text", text: { body: `New Advisor Application!\n\nName: ${name}\nPhone: ${phone}\nDistrict: ${district}\nSpecialisation: ${specialization}\nExperience: ${yearsOfExperience}\n\nReview: https://remobu-app-production.up.railway.app/public/admin-dashboard` } })
   });
   return json({ success: true });
+  } catch(err) {
+    console.error("ADVISOR_APPLY_ERROR:", err.message, err.stack);
+    return json({ error: err.message }, { status: 500 });
+  }
 }
 
 export async function loader() {
