@@ -19,8 +19,7 @@
     "graphql-codegen": "graphql-codegen",
     "vite": "vite",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "start:whatsapp": "node whatsapp-server.js",
-    "postinstall": "prisma generate"
+    "start:whatsapp": "node whatsapp-server.js"
   },
   "type": "module",
   "engines": {
