@@ -285,11 +285,11 @@ export async function action({ request }) {
     getGeminiResponse(userMessage, from)
       .then(async reply => {
         // M-Pesa payment trigger
-        if (/^(pay|patala|payment|tefiso|lefa)/i.test(text?.trim())) {
+        if (/^(pay|patala|payment|tefiso|lefa)/i.test(userMessage?.trim())) {
           await sendWhatsAppMessage(from, "💳 To make a payment, please reply with:\n\nPAY <amount>\nExample: PAY 50\n\nThis will send an M-Pesa prompt to your phone.");
           return;
         }
-        if (/^PAY \d+/i.test(text?.trim())) {
+        if (/^PAY \d+/i.test(userMessage?.trim())) {
           const amount = parseFloat(text.trim().split(" ")[1]);
           try {
             const res = await fetch(`${process.env.APP_URL}/mpesa`, {
@@ -313,7 +313,7 @@ export async function action({ request }) {
           }
           return;
         }
-        if (/^STATUS$/i.test(text?.trim())) {
+        if (/^STATUS$/i.test(userMessage?.trim())) {
           await sendWhatsAppMessage(from, "🔍 Checking your latest payment status...\n\nPlease wait a moment and reply STATUS again if needed.");
           return;
         }
