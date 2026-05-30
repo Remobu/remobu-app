@@ -2,7 +2,7 @@
   "name": "remobu-app",
   "private": true,
   "scripts": {
-    "build": "prisma generate && remix vite:build && node --input-type=module < patch-build.js",
+    "build": "PRISMA_HIDE_UPDATE_MESSAGE=true prisma generate && remix vite:build && node --input-type=module < patch-build.js",
     "dev": "remix dev --manual",
     "react-router": "react-router",
     "config:link": "shopify app config link",
