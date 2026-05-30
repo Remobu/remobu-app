@@ -89,6 +89,46 @@ export async function action({ request }) {
           },
         });
         console.log("✅ Payment recorded:", get("MpesaReceiptNumber"));
+
+        // Activate farmer subscription if amount is M50
+        const paidAmount = parseFloat(get("Amount") || 0);
+        const paidPhone = "+" + String(get("PhoneNumber") || "");
+        if (paidAmount >= 50) {
+          const user = await prisma.user.findUnique({ where: { phone: paidPhone }, include: { farmerProfile: true } });
+          if (user?.farmerProfile) {
+            const now = new Date();
+            const periodEnd = new Date(now);
+            periodEnd.setDate(periodEnd.getDate() + 30);
+            await prisma.farmer.update({
+              where: { userId: user.id },
+              data: { isSubscribed: true, subscriptionEnd: periodEnd }
+            });
+            await prisma.farmerSubscription.create({
+              data: {
+                farmerId: user.farmerProfile.id,
+                amount: paidAmount,
+                status: "COMPLETED",
+                mpesaRef: get("MpesaReceiptNumber") || "",
+                checkoutRequestId: checkoutId,
+                periodStart: now,
+                periodEnd: periodEnd
+              }
+            });
+            // Notify farmer via WhatsApp
+            const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+            const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+            await fetch(`https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}`, "Content-Type": "application/json" },
+              body: JSON.stringify({
+                messaging_product: "whatsapp",
+                to: String(get("PhoneNumber") || ""),
+                type: "text",
+                text: { body: "✅ *Subscription activated!*\n\nWelcome to Remobu Premium 🌾\n\nYou now have unlimited farm advisor access for 30 days (until " + periodEnd.toDateString() + ").\n\nAsk me anything!" }
+              })
+            });
+          }
+        }
       } else {
         // Payment failed
         await prisma.mpesaPayment.create({
