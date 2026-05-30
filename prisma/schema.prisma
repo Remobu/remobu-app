@@ -77,6 +77,9 @@ model User {
   language      Language  @default(ENGLISH)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  otpCode       String?
+  otpExpiry     DateTime?
+  lastLogin     DateTime?
   farmerProfile  Farmer?
   advisorProfile Advisor?
   queriesAsked   Query[]  @relation("FarmerQueries")
@@ -88,7 +91,14 @@ model Farmer {
   user          User     @relation(fields: [userId], references: [id])
   location      String?
   cropTypes     String[]
-  walletBalance Float    @default(0)
+  walletBalance   Float    @default(0)
+  queryCount      Int      @default(0)
+  freeQueryLimit  Int      @default(50)
+  isSubscribed    Boolean  @default(false)
+  subscriptionEnd DateTime?
+  onboardedById   String?
+  onboardedBy     Advisor? @relation("OnboardedFarmers", fields: [onboardedById], references: [id])
+  farmerSubs      FarmerSubscription[]
   advisorId     String?
   advisor       Advisor? @relation(fields: [advisorId], references: [id])
   cohortId      String?
@@ -120,6 +130,7 @@ model Advisor {
   queries             Query[]          @relation("AdvisorQueries")
   subscriptions       AdvisorSubscription[]
   payouts             Payout[]
+  onboardedFarmers    Farmer[] @relation("OnboardedFarmers")
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 }
@@ -246,4 +257,18 @@ model AdvisorBilling {
   checkoutRequestId String
   status            String
   createdAt         DateTime @default(now())
+}
+
+model FarmerSubscription {
+  id                String        @id @default(cuid())
+  farmerId          String
+  farmer            Farmer        @relation(fields: [farmerId], references: [id])
+  amount            Float         @default(50)
+  currency          String        @default("LSL")
+  status            PaymentStatus @default(PENDING)
+  mpesaRef          String?
+  checkoutRequestId String?
+  periodStart       DateTime
+  periodEnd         DateTime
+  createdAt         DateTime      @default(now())
 }
