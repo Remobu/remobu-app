@@ -300,7 +300,19 @@ export async function action({ request }) {
       return;
     }
 
-    if (user?.farmerProfile) {
+    // Auto-create user + farmerProfile if first WhatsApp contact
+    if (!user) {
+      const newUser = await prisma.user.create({
+        data: { phone: from, role: "FARMER" }
+      });
+      await prisma.farmer.create({
+        data: { userId: newUser.id, queryCount: 1, freeQueryLimit: 50, walletBalance: 0 }
+      });
+    } else if (!user.farmerProfile) {
+      await prisma.farmer.create({
+        data: { userId: user.id, queryCount: 1, freeQueryLimit: 50, walletBalance: 0 }
+      });
+    } else {
       await prisma.farmer.update({
         where: { userId: user.id },
         data: { queryCount: { increment: 1 } }
