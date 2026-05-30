@@ -149,7 +149,7 @@ ${agriContext}${ragSection}`;
   console.log("🤖 Calling Gemini API...");
   try {
     response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -282,7 +282,7 @@ export async function action({ request }) {
       return json({ status: "unsupported_type" }, { status: 200 });
     }
     // Respond immediately, process async
-    getGeminiResponse(userMessage, from)
+    sendWhatsAppMessage(from, "🌱 Remobu Farm Advisor is thinking...").then(() => getGeminiResponse(userMessage, from))
       .then(async reply => {
         // M-Pesa payment trigger
         if (/^(pay|patala|payment|tefiso|lefa)/i.test(userMessage?.trim())) {
