@@ -123,6 +123,12 @@ model Advisor {
   payoutMethod        String?
   payoutAccount       String?
   isVerified          Boolean          @default(false)
+  district            String?
+  yearsOfExperience   String?
+  motivation          String?
+  billingAgreed       Boolean          @default(false)
+  credentialFileUrl   String?
+  applicationStatus   String           @default("PENDING")
   isActive            Boolean          @default(true)
   farmers             Farmer[]
   cohorts             Cohort[]
