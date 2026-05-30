@@ -42,6 +42,7 @@ export async function action({ request }) {
       create: { phone: normalizedPhone, otpCode: code, otpExpiry: expiry, role: "FARMER" }
     });
 
+    console.log("📱 OTP debug — PHONE_ID:", PHONE_NUMBER_ID, "TOKEN_START:", WHATSAPP_TOKEN?.slice(0,10));
     const sent = await sendOTPWhatsApp(normalizedPhone, code);
     if (!sent) return json({ error: "Failed to send OTP" }, { status: 500 });
 
