@@ -2,11 +2,11 @@ import { json } from "@remix-run/node";
 import prisma from "../db.server.js";
 
 const SPECIALIZATION_MAP = {
-  "Crops": "CROPS",
-  "Livestock (Vetenarian)": "LIVESTOCK",
-  "Aquaculture": "AQUACULTURE",
-  "Soil Health": "SOIL_HEALTH",
-  "Agronomist": "AGRONOMIST",
+  "Crops": "AGRONOMY",
+  "Livestock (Vetenarian)": "VETERINARY",
+  "Aquaculture": "GENERAL",
+  "Soil Health": "SOIL_SCIENCE",
+  "Agronomist": "AGRONOMY",
   "Integrated Pest Management (IPM)": "IPM",
   "Other": "GENERAL",
 };
