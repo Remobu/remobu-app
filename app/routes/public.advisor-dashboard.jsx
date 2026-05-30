@@ -1,15 +1,15 @@
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { getSession } from "../sessions.server.js";
 import prisma from "../db.server.js";
 
 export async function loader({ request }) {
-  const session = await getSession(request.headers.get("Cookie"));
-  const userId = session.get("userId");
-  if (!userId) return redirect("/public/login?role=advisor");
+  const cookie = request.headers.get("cookie") || "";
+  const match = cookie.match(/remobu_phone=([^;]+)/);
+  if (!match) return redirect("/public/login?role=advisor");
 
+  const phone = decodeURIComponent(match[1]);
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { phone },
     include: { advisor: { include: { cohorts: { include: { farmers: true } }, transactions: true } } }
   });
 
@@ -30,7 +30,7 @@ export default function AdvisorDashboard() {
         <a href="/public/logout" style={{ color: "white", fontSize: "14px" }}>Logout</a>
       </div>
       <div style={{ maxWidth: "600px", margin: "40px auto", padding: "0 16px" }}>
-        <p style={{ color: "#555" }}>Welcome, {user.name || user.email || user.phone}</p>
+        <p style={{ color: "#555" }}>Welcome, {user.name || user.phone}</p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
           <div style={{ background: "white", borderRadius: "12px", padding: "20px", textAlign: "center" }}>
             <div style={{ fontSize: "32px", fontWeight: "bold" }}>{totalFarmers}</div>
