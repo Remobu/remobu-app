@@ -28,7 +28,7 @@ export async function action({ request }) {
     if (!res.ok) return json({ error: data.error, step: "verify", phone });
 
     const role = data.user.role;
-    const dest = role === "ADMIN" ? "/admin-dashboard" : role === "ADVISOR" ? "/advisor-dashboard" : "/farmer-dashboard";
+    const dest = role === "ADMIN" ? "/admin-dashboard" : role === "ADVISOR" ? "/public/advisor-dashboard" : "/farmer-dashboard";
 
     return redirect(dest, {
       headers: {
