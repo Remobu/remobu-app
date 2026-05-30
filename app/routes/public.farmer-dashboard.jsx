@@ -1,6 +1,6 @@
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { prisma } from "../db.server.js";
+import prisma from "../db.server.js";
 
 export async function loader({ request }) {
   const cookie = request.headers.get("cookie") || "";
