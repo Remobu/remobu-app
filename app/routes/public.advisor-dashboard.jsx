@@ -10,16 +10,17 @@ export async function loader({ request }) {
   const phone = decodeURIComponent(match[1]);
   const user = await prisma.user.findUnique({
     where: { phone },
-    include: { advisor: { include: { cohorts: { include: { farmers: true } }, transactions: true } } }
+    include: { advisorProfile: { include: { cohorts: { include: { farmers: true } }, transactions: true } } }
   });
 
   if (!user || user.role !== "ADVISOR") return redirect("/public/login?role=advisor");
 
-  return json({ user, advisor: user.advisor });
+  return json({ user, advisor: user.advisorProfile });
 }
 
 export default function AdvisorDashboard() {
   const { user, advisor } = useLoaderData();
+  const advisorData = advisor;
   const totalFarmers = advisor?.cohorts?.reduce((sum, c) => sum + c.farmers.length, 0) ?? 0;
   const totalEarnings = advisor?.transactions?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0;
 
