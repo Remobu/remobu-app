@@ -285,6 +285,28 @@ export async function action({ request }) {
       return json({ status: "unsupported_type" }, { status: 200 });
     }
     // Respond immediately, process async
+    // Paywall check
+    const user = await prisma.user.findUnique({
+      where: { phone: from },
+      include: { farmerProfile: true }
+    });
+    const farmer = user?.farmerProfile;
+    const isSubscribed = farmer?.isSubscribed && farmer?.subscriptionEnd && new Date() < new Date(farmer.subscriptionEnd);
+    const queryCount = farmer?.queryCount ?? 0;
+    const freeLimit = farmer?.freeQueryLimit ?? 50;
+
+    if (!isSubscribed && queryCount >= freeLimit) {
+      await sendWhatsAppMessage(from, "🔒 You have used all " + freeLimit + " free queries.\n\nTo continue getting farm advice, subscribe for M50/month via M-Pesa.\n\nReply PAY 50 to subscribe now.");
+      return;
+    }
+
+    if (user?.farmerProfile) {
+      await prisma.farmer.update({
+        where: { userId: user.id },
+        data: { queryCount: { increment: 1 } }
+      });
+    }
+
     sendWhatsAppMessage(from, "🌱 Remobu Farm Advisor is thinking...").then(() => getGeminiResponse(userMessage, from))
       .then(async reply => {
         // M-Pesa payment trigger
