@@ -290,7 +290,7 @@ export async function action({ request }) {
           return;
         }
         if (/^PAY \d+/i.test(userMessage?.trim())) {
-          const amount = parseFloat(text.trim().split(" ")[1]);
+          const amount = parseFloat(userMessage.trim().split(" ")[1]);
           try {
             const res = await fetch(`${process.env.APP_URL}/mpesa`, {
               method: "POST",
