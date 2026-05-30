@@ -321,7 +321,7 @@ export async function action({ request }) {
           return;
         }
         // Strip markdown asterisks for WhatsApp plain text
-        const clean = reply.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+        const clean = reply.replace(/\*+/g, '').replace(/^[\s]*[-•]\s*/gm, '').trim();
         await sendLogoMessage(from, "Remobu Farm Advisor");
         await sendWhatsAppMessage(from, clean);
       })
