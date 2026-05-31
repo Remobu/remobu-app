@@ -100,7 +100,7 @@ export async function action({ request }) {
 export default function Advisor() {
   const { products = [] } = useLoaderData() ?? {};
   const fetcher = useFetcher();
-  const actionData = fetcher.data;
+  const actionData = useActionData();
   const navigation = useNavigation();
   const [question, setQuestion] = useState("");
   const [language, setLanguage] = useState("en");
