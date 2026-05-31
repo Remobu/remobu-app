@@ -28,16 +28,11 @@ export async function action({ request }) {
     update: { district, yearsOfExperience, credentials, motivation, billingAgreed: !!billingAgreed, credentialFileUrl, specialization: specKey, applicationStatus: "PENDING", isVerified: false, isActive: false },
     create: { userId: user.id, district, yearsOfExperience, credentials, motivation, billingAgreed: !!billingAgreed, credentialFileUrl, specialization: specKey, applicationStatus: "PENDING", consultancyFee: 0, monthlyFee: 50, isVerified: false, isActive: false }
   });
-  const waPhoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const waToken = process.env.WHATSAPP_TOKEN;
-  console.log("WA_DEBUG:", { waPhoneId, hasToken: !!waToken, adminPhone: process.env.ADMIN_PHONE });
   const waRes = await fetch(`https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
     body: JSON.stringify({ messaging_product: "whatsapp", to: process.env.ADMIN_PHONE || "26663475043", type: "text", text: { body: `New Advisor Application!\n\nName: ${name}\nPhone: ${phone}\nDistrict: ${district}\nSpecialisation: ${specialization}\nExperience: ${yearsOfExperience}\n\nReview: https://remobu-app-production.up.railway.app/public/admin-dashboard` } })
   });
-  const waBody = await waRes.text();
-  console.log("WA_RESPONSE:", waRes.status, waBody);
   return json({ success: true });
   } catch(err) {
     console.error("ADVISOR_APPLY_ERROR:", err.message, err.stack);
