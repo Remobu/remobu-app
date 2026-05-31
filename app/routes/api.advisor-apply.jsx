@@ -31,7 +31,7 @@ export async function action({ request }) {
   const waRes = await fetch(`https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
-    body: JSON.stringify({ messaging_product: "whatsapp", to: process.env.ADMIN_PHONE || "26663475043", type: "text", text: { body: `New Advisor Application!\n\nName: ${name}\nPhone: ${phone}\nDistrict: ${district}\nSpecialisation: ${specialization}\nExperience: ${yearsOfExperience}\n\nReview: https://remobu-app-production.up.railway.app/app/advisor-admin` } })
+    body: JSON.stringify({ messaging_product: "whatsapp", to: process.env.ADMIN_PHONE || "26663475043", type: "text", text: { body: `New Advisor Application!\n\nName: ${name}\nPhone: ${phone}\nDistrict: ${district}\nSpecialisation: ${specialization}\nExperience: ${yearsOfExperience}\n\nReview: https://remobu-advisor.myshopify.com/admin/apps/remobu-app/advisor-admin` } })
   });
   return json({ success: true });
   } catch(err) {
