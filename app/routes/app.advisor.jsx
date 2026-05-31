@@ -1,5 +1,5 @@
 import { useActionData, useLoaderData, useFetcher, useNavigation } from "@remix-run/react";
-import { data } from "@remix-run/react";
+import { data } from "@remix-run/node";
 import { useState } from "react";
 import { AppProvider, Page, Card, TextField, Button, Text, BlockStack, Select } from "@shopify/polaris";
 import enTranslations from "@shopify/polaris/locales/en.json";
