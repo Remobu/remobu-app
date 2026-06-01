@@ -104,13 +104,25 @@ export default function Advisor() {
   const navigation = useNavigation();
   const [question, setQuestion] = useState("");
   const [language, setLanguage] = useState("en");
+  const [answer, setAnswer] = useState("");
+  const [isAnswering, setIsAnswering] = useState(false);
   const isLoading = fetcher.state === "submitting";
 
-  const handleSubmit = () => {
-    const formData = new FormData();
-    formData.append("question", question);
-    formData.append("language", language);
-    fetcher.submit(formData, { method: "post" });
+  const handleSubmit = async () => {
+    setAnswer("");
+    setIsAnswering(true);
+    try {
+      const res = await fetch("/api/advisor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, language })
+      });
+      const json = await res.json();
+      setAnswer(json.answer || "No response received.");
+    } catch (e) {
+      setAnswer("Error contacting advisor. Please try again.");
+    }
+    setIsAnswering(false);
   };
 
   return (
@@ -136,7 +148,7 @@ export default function Advisor() {
                 multiline={3}
                 placeholder="e.g. What controls work best for aphids on brassicas?"
               />
-              <Button variant="primary" onClick={handleSubmit} loading={isLoading}>
+              <Button variant="primary" onClick={handleSubmit} loading={isAnswering}>
                 Ask Advisor
               </Button>
             </BlockStack>
@@ -144,11 +156,11 @@ export default function Advisor() {
           <Card>
             <Text variant="headingMd">Your REMOBU Products ({products.length})</Text>
           </Card>
-          {actionData?.answer && (
+          {answer && (
             <Card>
               <BlockStack gap="200">
                 <Text variant="headingMd">Advisor Response</Text>
-                <Text>{actionData.answer}</Text>
+                <Text>{answer}</Text>
               </BlockStack>
             </Card>
           )}
