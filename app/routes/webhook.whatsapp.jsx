@@ -249,21 +249,30 @@ async function sendWhatsAppMessage(to, message) {
 // Download image from WhatsApp and analyse with Gemini Vision
 async function analyseImageWithGemini(imageId, from) {
   try {
-    // Step 1: Get image URL from WhatsApp
+    // Step 1: Get media URL from WhatsApp Graph API
     const metaRes = await fetch(`https://graph.facebook.com/v19.0/${imageId}`, {
-      headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` }
+      headers: { 
+        Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+        'User-Agent': 'curl/7.68.0'
+      }
     });
     const metaData = await metaRes.json();
+    console.log("IMAGE_META:", JSON.stringify(metaData));
     const imageUrl = metaData?.url;
-    if (!imageUrl) throw new Error("No image URL from WhatsApp");
+    if (!imageUrl) throw new Error("No image URL: " + JSON.stringify(metaData));
 
-    // Step 2: Download image bytes
+    // Step 2: Download image bytes using Graph API auth
     const imgRes = await fetch(imageUrl, {
-      headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` }
+      headers: { 
+        Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+        'User-Agent': 'curl/7.68.0'
+      }
     });
+    if (!imgRes.ok) throw new Error("Image download failed: " + imgRes.status);
     const imgBuffer = await imgRes.arrayBuffer();
     const base64Image = Buffer.from(imgBuffer).toString('base64');
-    const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+    const mimeType = metaData?.mime_type || imgRes.headers.get('content-type') || 'image/jpeg';
+    console.log("IMAGE_SIZE:", imgBuffer.byteLength, "MIME:", mimeType);
 
     // Step 3: Send to Gemini Vision
     const geminiRes = await fetch(
