@@ -245,6 +245,63 @@ async function sendWhatsAppMessage(to, message) {
   }
 }
 
+
+// Download image from WhatsApp and analyse with Gemini Vision
+async function analyseImageWithGemini(imageId, from) {
+  try {
+    // Step 1: Get image URL from WhatsApp
+    const metaRes = await fetch(`https://graph.facebook.com/v19.0/${imageId}`, {
+      headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` }
+    });
+    const metaData = await metaRes.json();
+    const imageUrl = metaData?.url;
+    if (!imageUrl) throw new Error("No image URL from WhatsApp");
+
+    // Step 2: Download image bytes
+    const imgRes = await fetch(imageUrl, {
+      headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}` }
+    });
+    const imgBuffer = await imgRes.arrayBuffer();
+    const base64Image = Buffer.from(imgBuffer).toString('base64');
+    const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+
+    // Step 3: Send to Gemini Vision
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            role: 'user',
+            parts: [
+              {
+                inline_data: { mime_type: mimeType, data: base64Image }
+              },
+              {
+                text: `You are Remobu Farm Advisor, an expert agricultural advisor for smallholder farmers in Lesotho and southern Africa. Analyse this image carefully and provide:
+1. What you see (crop, plant, animal, soil, pest, disease, etc.)
+2. Diagnosis — identify any disease, pest, deficiency, or problem visible
+3. Severity — mild / moderate / severe
+4. Recommended action — specific, practical steps the farmer can take immediately
+5. Prevention — how to avoid this in future
+
+Be concise, practical, and use simple language. If the image is not farm-related, politely say so and ask them to send a farm photo.`
+              }
+            ]
+          }],
+          generationConfig: { maxOutputTokens: 600 }
+        })
+      }
+    );
+    const geminiData = await geminiRes.json();
+    return geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "I could not analyse the image. Please try sending a clearer photo.";
+  } catch (e) {
+    console.error("IMAGE_ANALYSIS_ERROR:", e.message);
+    return "Sorry, I had trouble analysing your image. Please try again with a clearer photo.";
+  }
+}
+
 // Remix loader - handles GET (WhatsApp webhook verification)
 export async function loader({ request }) {
   const url = new URL(request.url);
@@ -278,10 +335,28 @@ export async function action({ request }) {
     let userMessage = "";
     if (msg.type === "text") {
       userMessage = msg.text?.body || "";
+    } else if (msg.type === "image") {
+      const imageId = msg.image?.id;
+      if (!imageId) return json({ status: "no_image_id" }, { status: 200 });
+      await sendWhatsAppMessage(from, "📸 Analysing your image... please wait a moment.");
+      const diagnosis = await analyseImageWithGemini(imageId, from);
+      const clean = diagnosis.replace(/\*+/g, '').trim();
+      await sendWhatsAppMessage(from, clean);
+      // Save to conversation history
+      try {
+        await prisma.conversation.createMany({
+          data: [
+            { phone: from, role: 'user', message: '[Image sent for analysis]' },
+            { phone: from, role: 'assistant', message: clean }
+          ]
+        });
+      } catch(e) { console.warn("Conv save skipped:", e.message); }
+      return json({ status: "ok" }, { status: 200 });
     } else if (msg.type === "audio") {
       await sendWhatsAppMessage(from, "🎤 I received your voice message. Voice transcription is coming soon. Please type your question for now and I will assist you right away.");
       return json({ status: "ok" }, { status: 200 });
     } else {
+      await sendWhatsAppMessage(from, "I can read text messages and analyse photos. Please send a text question or a photo of your crop, plant, or soil.");
       return json({ status: "unsupported_type" }, { status: 200 });
     }
     // Respond immediately, process async
