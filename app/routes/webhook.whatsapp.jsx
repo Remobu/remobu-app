@@ -367,7 +367,7 @@ If the audio is unclear, ask them to repeat their question by text.` }
 }
 
 
-// Download audio from WhatsApp and transcribe+respond with Gemini
+
 async function analyseAudioWithGemini(audioId, from) {
   try {
     // Step 1: Get audio URL from WhatsApp
