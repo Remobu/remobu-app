@@ -368,58 +368,7 @@ If the audio is unclear, ask them to repeat their question by text.` }
 
 
 
-async function analyseAudioWithGemini(audioId, from) {
-  try {
-    // Step 1: Get audio URL from WhatsApp
-    const metaRes = await fetch(`https://graph.facebook.com/v19.0/${audioId}`, {
-      headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}`, 'User-Agent': 'curl/7.68.0' }
-    });
-    const metaData = await metaRes.json();
-    console.log("AUDIO_META:", JSON.stringify(metaData));
-    const audioUrl = metaData?.url;
-    if (!audioUrl) throw new Error("No audio URL: " + JSON.stringify(metaData));
 
-    // Step 2: Download audio bytes
-    const audioRes = await fetch(audioUrl, {
-      headers: { Authorization: `Bearer ${WHATSAPP_TOKEN}`, 'User-Agent': 'curl/7.68.0' }
-    });
-    if (!audioRes.ok) throw new Error("Audio download failed: " + audioRes.status);
-    const audioBuffer = await audioRes.arrayBuffer();
-    const base64Audio = Buffer.from(audioBuffer).toString('base64');
-    const mimeType = metaData?.mime_type || 'audio/ogg';
-    console.log("AUDIO_SIZE:", audioBuffer.byteLength, "MIME:", mimeType);
-
-    // Step 3: Send to Gemini Audio for transcription + farm advice response
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [
-              { inline_data: { mime_type: mimeType, data: base64Audio } },
-              { text: `You are Remobu Farm Advisor, an expert agricultural advisor for smallholder farmers in Lesotho and southern Africa. The farmer has sent you a voice message in Sesotho or English. Please:
-1. Transcribe what they said (briefly)
-2. Answer their farming question with practical, actionable advice
-3. Keep your response concise and in the same language they used
-
-If the audio is unclear, ask them to repeat their question by text.` }
-            ]
-          }],
-          generationConfig: { maxOutputTokens: 600 }
-        })
-      }
-    );
-    const geminiData = await geminiRes.json();
-    console.log("AUDIO_GEMINI:", JSON.stringify(geminiData).slice(0, 200));
-    return geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "I could not understand the voice message. Please type your question and I will assist you right away.";
-  } catch (e) {
-    console.error("AUDIO_ANALYSIS_ERROR:", e.message);
-    return "Sorry, I had trouble processing your voice message. Please type your question and I will assist you immediately.";
-  }
-}
 
 // Remix loader - handles GET (WhatsApp webhook verification)
 export async function loader({ request }) {
