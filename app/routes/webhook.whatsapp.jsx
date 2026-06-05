@@ -414,6 +414,17 @@ export async function action({ request }) {
     let userMessage = "";
     if (msg.type === "text") {
       userMessage = msg.text?.body || "";
+      // Editor-in-Chief override
+      if (userMessage.toLowerCase().startsWith('editor:')) {
+        const instruction = userMessage.slice(7).trim();
+        if (!global.editorInstructions) global.editorInstructions = [];
+        global.editorInstructions.push(instruction);
+        if (global.editorInstructions.length > 10) global.editorInstructions.shift();
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? "morning" : hour < 17 ? "day" : hour < 21 ? "evening" : "night";
+        await sendWhatsAppMessage(from, `Good ${greeting}, Editor. Instruction received: "${instruction}". Active instructions: ${global.editorInstructions.length}`);
+        return json({ status: "editor_instruction_saved" }, { status: 200 });
+      }
     } else if (msg.type === "image") {
       const imageId = msg.image?.id;
       if (!imageId) return json({ status: "no_image_id" }, { status: 200 });
