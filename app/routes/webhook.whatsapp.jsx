@@ -207,7 +207,6 @@ async function sendLogoMessage(to, caption) {
     type: "sticker",
     sticker: {
       link: "https://cdn.shopify.com/s/files/1/0975/4057/1438/files/Remobu_Logo.jpg?v=1778694454",
-      caption: caption || ""
     }
   };
   const res = await fetch(url, {
