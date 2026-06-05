@@ -426,12 +426,10 @@ export async function action({ request }) {
       }
       // --- FREE QUERY COUNTER & PAYWALL ---
       try {
-        let farmerRec = await prisma.farmer.findUnique({ where: { phone: from } });
-        if (!farmerRec) {
-          farmerRec = await prisma.farmer.create({ data: { phone: from, queryCount: 0, isSubscribed: false } });
-        }
-        const count = farmerRec.queryCount || 0;
-        const subscribed = farmerRec.isSubscribed || false;
+        const userRec = await prisma.user.findUnique({ where: { phone: from }, include: { farmerProfile: true } });
+        let farmerRec = userRec?.farmerProfile || null;
+        const count = farmerRec?.queryCount || 0;
+        const subscribed = farmerRec?.isSubscribed || false;
 
         if (!subscribed && count >= 50) {
           await sendWhatsAppMessage(from,
@@ -462,7 +460,7 @@ export async function action({ request }) {
         }
 
         // Increment counter (fire and forget)
-        prisma.farmer.update({ where: { phone: from }, data: { queryCount: { increment: 1 } } })
+        farmerRec && prisma.farmer.update({ where: { id: farmerRec.id }, data: { queryCount: { increment: 1 } } })
           .catch(e => console.warn('Counter increment failed:', e.message));
 
       } catch(e) { console.warn('Paywall check failed:', e.message); }
