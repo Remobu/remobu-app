@@ -424,6 +424,49 @@ export async function action({ request }) {
         await sendWhatsAppMessage(from, `Good ${greeting}, Editor. Instruction received: "${instruction}". Active instructions: ${global.editorInstructions.length}`);
         return json({ status: "editor_instruction_saved" }, { status: 200 });
       }
+      // --- FREE QUERY COUNTER & PAYWALL ---
+      try {
+        let farmerRec = await prisma.farmer.findUnique({ where: { phone: from } });
+        if (!farmerRec) {
+          farmerRec = await prisma.farmer.create({ data: { phone: from, queryCount: 0, isSubscribed: false } });
+        }
+        const count = farmerRec.queryCount || 0;
+        const subscribed = farmerRec.isSubscribed || false;
+
+        if (!subscribed && count >= 50) {
+          await sendWhatsAppMessage(from,
+            "🔒 You have used all 50 free queries.\n\n" +
+            "To continue receiving expert farm advice from Remobu, subscribe for M50/month.\n\n" +
+            "Payment is via M-Pesa (Mpesa merchant payment):\n" +
+            "1. Open M-Pesa on your phone\n" +
+            "2. Select Lipa na M-Pesa / Pay Merchant\n" +
+            "3. Enter merchant number: 26663475043\n" +
+            "4. Amount: M50\n" +
+            "5. Reference: REMOBU\n\n" +
+            "Once paid, send us your M-Pesa receipt number and we will activate your account within minutes."
+          );
+          return json({ status: "paywall_blocked" }, { status: 200 });
+        }
+
+        if (!subscribed && count === 39) {
+          await sendWhatsAppMessage(from,
+            "Heads up: You have used 40 of your 50 free queries.\n\n" +
+            "After 50 queries, a M50/month subscription via M-Pesa is required to continue. " +
+            "You have 10 free queries remaining."
+          );
+        } else if (!subscribed && count >= 40 && count < 50) {
+          await sendWhatsAppMessage(from,
+            `Reminder: You have ${50 - count} free ${50 - count === 1 ? 'query' : 'queries'} remaining.\n\n` +
+            "After that, subscribe for M50/month via M-Pesa to continue."
+          );
+        }
+
+        // Increment counter (fire and forget)
+        prisma.farmer.update({ where: { phone: from }, data: { queryCount: { increment: 1 } } })
+          .catch(e => console.warn('Counter increment failed:', e.message));
+
+      } catch(e) { console.warn('Paywall check failed:', e.message); }
+      // --- END PAYWALL ---
     } else if (msg.type === "image") {
       const imageId = msg.image?.id;
       if (!imageId) return json({ status: "no_image_id" }, { status: 200 });
