@@ -74,6 +74,18 @@ async function getGeminiResponse(userMessage, from = "unknown") {
   ];
   // Apply Editor-in-Chief overrides
   const overrides = global.editorInstructions || [];
+  // Editor-in-Chief override: "editor: [instruction]"
+  if (typeof incomingMsg === 'string' && incomingMsg.toLowerCase().startsWith('editor:')) {
+    const instruction = incomingMsg.slice(7).trim();
+    if (!global.editorInstructions) global.editorInstructions = [];
+    global.editorInstructions.push(instruction);
+    // Keep only last 10 instructions
+    if (global.editorInstructions.length > 10) global.editorInstructions.shift();
+    await sendWhatsAppMessage(from, `✅ Editor instruction saved: "${instruction}"
+Active instructions: ${global.editorInstructions.length}`);
+    return new Response('OK', { status: 200 });
+  }
+
   const overrideText = overrides.length > 0 ? "\n\nEDITOR INSTRUCTIONS:\n" + overrides.join("\n") : "";
 
   const agriContext = `
