@@ -30,3 +30,8 @@ export function ErrorBoundary() {
   }
   throw error;
 }
+
+// Handle stray POST requests to root
+export async function action() {
+  return new Response("Not found", { status: 404 });
+}
