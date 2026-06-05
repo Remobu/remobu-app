@@ -14,7 +14,7 @@ const processedMessages = new Set();
 async function getRelevantContext(query, apiKey) {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), 10000);
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
       {
@@ -159,7 +159,7 @@ TOPICS YOU MUST HANDLE:
 
 ${agriContext}${ragSection}`;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  const timeoutId = setTimeout(() => controller.abort(), 55000);
   let response;
   console.log("🤖 Calling Gemini API...");
   try {
