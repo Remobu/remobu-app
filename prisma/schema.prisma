@@ -278,3 +278,22 @@ model FarmerSubscription {
   periodEnd         DateTime
   createdAt         DateTime      @default(now())
 }
+
+model TraceBatch {
+  id             String   @id @default(cuid())
+  batchCode      String   @unique
+  type           String
+  farmerName     String
+  village        String
+  plotOrShedId   String
+  animalOrCrop   String
+  quantity       String?
+  dateProcessed  DateTime
+  inputs         String?
+  certifications String?
+  notes          String?
+  qrUrl          String?
+  whatsappSent   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
