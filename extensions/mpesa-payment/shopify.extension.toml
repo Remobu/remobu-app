@@ -1,6 +1,7 @@
+[[extensions]]
 name = "mpesa-payment"
+handle = "mpesa-payment"
 type = "payment_customization"
-api_version = "2025-01"
 
 [[extensions.targeting]]
 module = "./src/index.js"
