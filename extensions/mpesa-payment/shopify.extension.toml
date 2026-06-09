@@ -1,3 +1,5 @@
+api_version = "2025-01"
+
 [[extensions]]
 name = "mpesa-payment"
 handle = "mpesa-payment"
