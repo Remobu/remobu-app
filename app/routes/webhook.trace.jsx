@@ -46,7 +46,7 @@ function generateBatchCode(type) {
 
 async function saveBatchAndSendQR(phone, session) {
   const batchCode = generateBatchCode(session.type);
-  const publicUrl = `https://remobu.africa/trace/${batchCode}`;
+  const publicUrl = `https://app.remobu.africa/trace/${batchCode}`;
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(publicUrl)}`;
 
   await db.traceBatch.create({
