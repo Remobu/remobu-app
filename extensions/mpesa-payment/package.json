@@ -1,7 +1,0 @@
-{
-  "name": "mpesa-payment",
-  "version": "1.0.0",
-  "dependencies": {
-    "@shopify/shopify_function": "~2.0.0"
-  }
-}
