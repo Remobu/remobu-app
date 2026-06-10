@@ -1,13 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "@remix-run/react";
-import { json } from "@remix-run/node";
-import { authenticate } from "../shopify.server";
-
-export async function loader({ request }) {
-  await authenticate.admin(request);
-  return json({});
-}
-
 export default function NewBatch() {
   const navigate = useNavigate();
   const [type, setType] = useState("CROPS");
