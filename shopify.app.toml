@@ -3,7 +3,6 @@
 client_id = "9dd5c432036e97336f25c29159775c41"
 name = "Remobu App"
 application_url = "https://app.remobu.africa"
-embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
