@@ -12,7 +12,7 @@ export const loader = async ({ request }) => {
 export default function App() {
   const { apiKey } = useLoaderData();
   return (
-    <AppProvider isEmbeddedApp apiKey={apiKey}>
+    <AppProvider isEmbeddedApp={false} apiKey={apiKey}>
       <Outlet />
     </AppProvider>
   );
