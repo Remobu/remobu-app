@@ -44,7 +44,7 @@ export default function TraceAdmin() {
           <h1 style={styles.title}>🌿 Remobu Trace</h1>
           <p style={styles.subtitle}>Farm-to-Flock QR Traceability Network — Lesotho</p>
         </div>
-        <button style={styles.btn} onClick={() => navigate("/app/trace/new")}>
+        <button style={styles.btn} onClick={() => window.open("https://admin.shopify.com/store/remobu-2/apps/remobu-trace/app/trace/new", "_top")}>
           + Register New Batch
         </button>
       </div>
