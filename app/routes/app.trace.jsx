@@ -44,9 +44,9 @@ export default function TraceAdmin() {
           <h1 style={styles.title}>🌿 Remobu Trace</h1>
           <p style={styles.subtitle}>Farm-to-Flock QR Traceability Network — Lesotho</p>
         </div>
-        <button style={styles.btn} onClick={() => navigate("/app/trace/new")}>
+        <a href="/app/trace/new" style={{...styles.btn, textDecoration: "none", display: "inline-block"}}>
           + Register New Batch
-        </button>
+        </a>
       </div>
 
       <div style={styles.statsRow}>
