@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "f441c2fe8cf0d288130a44202dc11341"
+client_id = "9dd5c432036e97336f25c29159775c41"
 name = "Remobu App"
 application_url = "https://app.remobu.africa"
 embedded = true
