@@ -102,7 +102,7 @@ Q: What should I ask myself before choosing a cereal crop for my area?
 A: First, check if your region's climate is suitable for the crop you're considering. Then, determine if your soil type, pH, and salinity are appropriate. Ensure fertilizers for nitrogen, phosphate, and potassium are available. Next, assess if the crop's moisture needs can be met naturally via availabl
 
 Q: How does 'passing on the gift' support community development and resource sharing? Are there specific examples of where this is practiced?
-A: 'Passing on the gift' supports community development by creating a culture of sharing and mutual aid among families. For example, in many African villages, this practice involves giving offspring from animals like goats or chickens to another family. This cycle reinforces social bonds and community 
+A: 'Passing on the gift' supports community development by creating a culture of sharing and mutual aid among families. For example, in many African villages, this practice involves giving offspring from animals like goats or chickens to another family. This cycle reinforces social bonds and community
 
 Q: What are the regional-specific irrigation strategies for optimizing coffee yield, taking into account climatic conditions and water management practices?
 A: ### Regional-Specific Irrigation Strategies  Effective regional irrigation management is crucial for optimizing coffee yield:  - **Water Management Practices**: Implement under-tree irrigation systems such as drip and basin to minimize water usage, achieving 30 to 40% water savings without compromis
@@ -262,7 +262,7 @@ async function analyseImageWithGemini(imageId, from) {
   try {
     // Step 1: Get media URL from WhatsApp Graph API
     const metaRes = await fetch(`https://graph.facebook.com/v19.0/${imageId}`, {
-      headers: { 
+      headers: {
         Authorization: `Bearer ${WHATSAPP_TOKEN}`,
         'User-Agent': 'curl/7.68.0'
       }
@@ -274,7 +274,7 @@ async function analyseImageWithGemini(imageId, from) {
 
     // Step 2: Download image bytes using Graph API auth
     const imgRes = await fetch(imageUrl, {
-      headers: { 
+      headers: {
         Authorization: `Bearer ${WHATSAPP_TOKEN}`,
         'User-Agent': 'curl/7.68.0'
       }
@@ -433,15 +433,14 @@ export async function action({ request }) {
 
         if (!subscribed && count >= 50) {
           await sendWhatsAppMessage(from,
-            "🔒 You have used all 50 free queries.\n\n" +
-            "To continue receiving expert farm advice from Remobu, subscribe for M50/month.\n\n" +
-            "Payment is via M-Pesa (Mpesa merchant payment):\n" +
+            "You have used all 50 free Remobu Advisor queries.\n\n" +
+            "To continue, subscribe for M50/month via M-Pesa:\n\n" +
             "1. Open M-Pesa on your phone\n" +
-            "2. Select Lipa na M-Pesa / Pay Merchant\n" +
-            "3. Enter merchant number: 26663475043\n" +
+            "2. Select Pay with M-Pesa - Buy Goods and Services\n" +
+            "3. Enter Till Number: *50485*\n" +
             "4. Amount: M50\n" +
-            "5. Reference: REMOBU\n\n" +
-            "Once paid, send us your M-Pesa receipt number and we will activate your account within minutes."
+            "5. Reference: Your WhatsApp number\n\n" +
+            "Once paid, send us your M-Pesa confirmation SMS and we will activate your subscription within minutes."
           );
           return json({ status: "paywall_blocked" }, { status: 200 });
         }
