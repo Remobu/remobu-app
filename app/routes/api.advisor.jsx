@@ -1,3 +1,11 @@
+
+export async function loader({ request }) {
+  return new Response(JSON.stringify({ status: "ok" }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 import { json } from "@remix-run/node";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
